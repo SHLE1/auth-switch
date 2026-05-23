@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
-import type { Account, ImportResult, LiveAuthStatus, SwitchResult } from "../../shared/types";
+import type { Account, CodexApiProfileInput, ImportResult, LiveAuthStatus, SwitchResult } from "../../shared/types";
 import {
   authHashExists,
+  apiProfileExists,
   deleteAccount,
   findByEmail,
   getAccountById,
@@ -11,11 +12,14 @@ import {
   insertAccount,
   setCurrentAccount,
   toAccount,
-  updateAccountAuthJson,
+  updateAccountLiveSnapshot,
   updateAccountMeta
 } from "../db/accounts";
 import { getCodexAuthPath } from "../codex/paths";
 import { atomicWrite } from "../codex/writer";
+import { buildCodexApiProfile } from "../codex/apiProfile";
+import { disableCodexApiEnvironment } from "../codex/env";
+import { disableCodexBaseUrl, enableCodexBaseUrl } from "../codex/config";
 import { hashAuthJson, readAndValidateAuthFile, readLiveAuthFile } from "./authFile";
 
 let switchInProgress = false;
@@ -48,6 +52,9 @@ export function importAuthFileFromPath(filePath: string, name?: string, setCurre
       email: snapshot.email,
       auth_json: snapshot.content,
       auth_hash: snapshot.hash,
+      kind: "auth_json",
+      base_url: null,
+      model: null,
       is_current: 0,
       created_at: now,
       updated_at: now,
@@ -64,6 +71,43 @@ export function importAuthFileFromPath(filePath: string, name?: string, setCurre
       sameEmailExists,
       account: account ? toAccount(account) : undefined
     };
+  } catch (error) {
+    return { success: false, error: formatError(error) };
+  }
+}
+
+export function createApiProfile(input: CodexApiProfileInput): ImportResult {
+  try {
+    const displayName = cleanName(input.name) ?? "Custom API profile";
+    const profile = buildCodexApiProfile({
+      apiKey: input.apiKey,
+      baseUrl: input.baseUrl
+    });
+    const authHash = hashAuthJson(profile.authHashMaterial);
+
+    if (apiProfileExists(authHash, profile.baseUrl)) {
+      return { success: false, duplicate: true, error: "This API key profile is already in auth-switch." };
+    }
+
+    const now = Date.now();
+    const id = randomUUID();
+    insertAccount({
+      id,
+      name: displayName,
+      email: null,
+      auth_json: profile.authJson,
+      auth_hash: authHash,
+      kind: "api_key",
+      base_url: profile.baseUrl,
+      model: input.model?.trim() || null,
+      is_current: 0,
+      created_at: now,
+      updated_at: now,
+      last_used_at: null
+    });
+
+    const account = getAccountById(id);
+    return { success: true, account: account ? toAccount(account) : undefined };
   } catch (error) {
     return { success: false, error: formatError(error) };
   }
@@ -122,18 +166,29 @@ export function switchAccount(id: string): SwitchResult {
     }
 
     const current = getCurrentAccount();
-    if (current && current.id !== target.id) {
+    if (current && current.id !== target.id && current.kind === "auth_json") {
       try {
         const live = readLiveAuthFile();
         if (live) {
-          updateAccountAuthJson(current.id, live.content, live.hash, Date.now());
+          updateAccountLiveSnapshot(current.id, live.content, live.hash, Date.now());
         }
       } catch (error) {
         console.warn("Skipping current-account backfill:", formatError(error));
       }
     }
 
-    atomicWrite(getCodexAuthPath(), target.auth_json);
+    if (target.kind === "api_key") {
+      const parsed = JSON.parse(target.auth_json) as { OPENAI_API_KEY?: unknown };
+      const apiKey = typeof parsed.OPENAI_API_KEY === "string" ? parsed.OPENAI_API_KEY : "";
+      atomicWrite(getCodexAuthPath(), target.auth_json);
+      disableCodexApiEnvironment();
+      if (!apiKey) throw new Error("API key cannot be empty. Please recreate this API profile.");
+      enableCodexBaseUrl(target.base_url ?? "");
+    } else {
+      atomicWrite(getCodexAuthPath(), target.auth_json);
+      disableCodexApiEnvironment();
+      disableCodexBaseUrl();
+    }
     setCurrentAccount(target.id);
 
     const updatedTarget = getAccountById(target.id);

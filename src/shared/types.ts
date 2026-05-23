@@ -2,10 +2,20 @@ export interface Account {
   id: string;
   name: string;
   email: string | null;
+  kind: "auth_json" | "api_key";
+  base_url: string | null;
+  model: string | null;
   is_current: boolean;
   created_at: number;
   updated_at: number;
   last_used_at: number | null;
+}
+
+export interface CodexApiProfileInput {
+  name: string;
+  apiKey: string;
+  baseUrl: string;
+  model?: string;
 }
 
 export interface SwitchResult {
@@ -36,6 +46,7 @@ export interface AuthSwitchApi {
   getCurrentAccount(): Promise<Account | null>;
   switchAccount(id: string): Promise<SwitchResult>;
   importAuthFile(): Promise<ImportResult>;
+  createApiProfile(input: CodexApiProfileInput): Promise<ImportResult>;
   importLiveAuthFile(name?: string, setCurrent?: boolean): Promise<ImportResult>;
   renameAccount(id: string, name: string): Promise<void>;
   deleteAccount(id: string): Promise<void>;

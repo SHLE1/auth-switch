@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, LockKeyhole } from "lucide-react";
 import { useAccounts } from "./hooks/useAccounts";
-import type { Account, ImportResult } from "./types";
+import type { Account, CodexApiProfileInput, ImportResult } from "./types";
 import { AccountList } from "./components/AccountList";
+import { ApiProfileDialog } from "./components/ApiProfileDialog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { CurrentAccountCard } from "./components/CurrentAccountCard";
 import { FirstRunDialog } from "./components/FirstRunDialog";
@@ -12,6 +13,7 @@ import { RenameDialog } from "./components/RenameDialog";
 export default function App(): JSX.Element {
   const { accounts, current, loading, error, setError, refresh } = useAccounts();
   const [firstRunVisible, setFirstRunVisible] = useState(false);
+  const [apiProfileVisible, setApiProfileVisible] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Account | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -78,6 +80,21 @@ export default function App(): JSX.Element {
     }
   }
 
+  async function handleCreateApiProfile(input: CodexApiProfileInput): Promise<void> {
+    try {
+      const result = await window.authSwitch.createApiProfile(input);
+      if (!result.success) {
+        showError(result.error ?? "Failed to save API profile.");
+        return;
+      }
+      setApiProfileVisible(false);
+      showNotice(`Saved API profile ${result.account?.name ?? input.name}.`);
+      await refresh();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   function handleImported(result: ImportResult): void {
     const duplicateNote = result.duplicate ? " Duplicate content was ignored." : "";
     const sameEmailNote = result.sameEmailExists ? " Another account with this email already exists." : "";
@@ -118,7 +135,16 @@ export default function App(): JSX.Element {
         <section className="mt-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="mono-label text-xs text-console-muted">Accounts</h2>
-            <ImportButton onImported={handleImported} onError={showError} />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setApiProfileVisible(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-console-line bg-console-panel px-3 py-2 font-mono text-sm text-console-text transition hover:border-console-green/60 hover:text-console-green"
+              >
+                Add API
+              </button>
+              <ImportButton onImported={handleImported} onError={showError} />
+            </div>
           </div>
           <AccountList
             accounts={accounts}
@@ -144,6 +170,10 @@ export default function App(): JSX.Element {
           }}
           onError={showError}
         />
+      )}
+
+      {apiProfileVisible && (
+        <ApiProfileDialog onCancel={() => setApiProfileVisible(false)} onSave={(input) => void handleCreateApiProfile(input)} />
       )}
 
       {renameTarget && (

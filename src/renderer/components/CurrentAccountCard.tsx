@@ -16,9 +16,11 @@ export function CurrentAccountCard({ account }: CurrentAccountCardProps): JSX.El
       {account ? (
         <div>
           <h2 className="truncate text-lg font-semibold text-console-text">{account.name}</h2>
-          <p className="mt-1 truncate font-mono text-sm text-console-muted">{account.email ?? "email unavailable"}</p>
+          <p className="mt-1 truncate font-mono text-sm text-console-muted">
+            {account.kind === "api_key" ? account.base_url ?? "API profile" : account.email ?? "email unavailable"}
+          </p>
           <p className="mt-3 flex items-center gap-2 font-mono text-xs text-console-green">
-            <Terminal size={14} /> Active · ~/.codex/auth.json
+            <Terminal size={14} /> Active · {account.kind === "api_key" ? "auth.json + openai_base_url" : "~/.codex/auth.json"}
           </p>
         </div>
       ) : (

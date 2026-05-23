@@ -20,7 +20,9 @@ export function AccountRow({ account, onSwitch, onRename, onDelete }: AccountRow
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h3 className="truncate text-sm font-semibold text-console-text">{account.name}</h3>
-              <p className="truncate font-mono text-xs text-console-muted">{account.email ?? "email unavailable"}</p>
+              <p className="truncate font-mono text-xs text-console-muted">
+                {account.kind === "api_key" ? account.base_url ?? "API profile" : account.email ?? "email unavailable"}
+              </p>
             </div>
             {account.is_current ? (
               <span className="rounded-full border border-console-green/40 px-2 py-1 font-mono text-[11px] text-console-green">
@@ -38,6 +40,9 @@ export function AccountRow({ account, onSwitch, onRename, onDelete }: AccountRow
           </div>
 
           <div className="mt-3 flex items-center gap-2">
+            <span className="rounded-md border border-console-line px-2 py-1 font-mono text-[11px] text-console-muted">
+              {account.kind === "api_key" ? "api env" : "auth.json"}
+            </span>
             <button
               type="button"
               onClick={() => onRename(account)}

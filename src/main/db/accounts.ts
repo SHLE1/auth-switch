@@ -7,6 +7,9 @@ export interface AccountRow {
   email: string | null;
   auth_json: string;
   auth_hash: string;
+  kind: "auth_json" | "api_key";
+  base_url: string | null;
+  model: string | null;
   is_current: 0 | 1;
   created_at: number;
   updated_at: number;
@@ -19,6 +22,9 @@ export interface NewAccountRow {
   email: string | null;
   auth_json: string;
   auth_hash: string;
+  kind: "auth_json" | "api_key";
+  base_url: string | null;
+  model: string | null;
   is_current: 0 | 1;
   created_at: number;
   updated_at: number;
@@ -30,6 +36,9 @@ export function toAccount(row: AccountRow): Account {
     id: row.id,
     name: row.name,
     email: row.email,
+    kind: row.kind,
+    base_url: row.base_url,
+    model: row.model,
     is_current: row.is_current === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -59,9 +68,9 @@ export function insertAccount(row: NewAccountRow): void {
   getDatabase()
     .prepare(
       `INSERT INTO accounts (
-        id, name, email, auth_json, auth_hash, is_current, created_at, updated_at, last_used_at
+        id, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at
       ) VALUES (
-        @id, @name, @email, @auth_json, @auth_hash, @is_current, @created_at, @updated_at, @last_used_at
+        @id, @name, @email, @auth_json, @auth_hash, @kind, @base_url, @model, @is_current, @created_at, @updated_at, @last_used_at
       )`
     )
     .run(row);
@@ -82,6 +91,12 @@ export function updateAccountAuthJson(id: string, authJson: string, authHash: st
     .run(authJson, authHash, updatedAt, id);
 }
 
+export function updateAccountLiveSnapshot(id: string, authJson: string, authHash: string, updatedAt = Date.now()): void {
+  getDatabase()
+    .prepare("UPDATE accounts SET auth_json = ?, auth_hash = ?, updated_at = ? WHERE id = ?")
+    .run(authJson, authHash, updatedAt, id);
+}
+
 export function setCurrentAccount(id: string): void {
   const database = getDatabase();
   const setCurrent = database.transaction((targetId: string, now: number) => {
@@ -97,6 +112,13 @@ export function deleteAccount(id: string): void {
 
 export function authHashExists(hash: string): boolean {
   const row = getDatabase().prepare("SELECT 1 FROM accounts WHERE auth_hash = ? LIMIT 1").get(hash);
+  return Boolean(row);
+}
+
+export function apiProfileExists(authHash: string, baseUrl: string): boolean {
+  const row = getDatabase()
+    .prepare("SELECT 1 FROM accounts WHERE auth_hash = ? AND base_url = ? LIMIT 1")
+    .get(authHash, baseUrl);
   return Boolean(row);
 }
 
