@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { CodexApiProfileInput } from "../types";
 
 interface ApiProfileDialogProps {
@@ -15,6 +16,7 @@ const presets = [
 ];
 
 export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): JSX.Element {
+  const { t } = useTranslation();
   const [name, setName] = useState("Custom API");
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
@@ -39,14 +41,22 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
           }
         }}
       >
-        <h2 className="text-lg font-semibold text-console-text">Add Codex API profile</h2>
+        <h2 className="text-lg font-semibold text-console-text">{t("apiProfile.title")}</h2>
         <p className="mt-2 text-sm leading-5 text-console-muted">
-          Creates a Codex profile that writes API-key auth.json and only manages the{" "}
-          <span className="font-mono">openai_base_url</span> line in config.toml. Switching back to auth.json comments that line out.
+          {t("apiProfile.desc").split("openai_base_url").map((part, i, arr) =>
+            i < arr.length - 1 ? (
+              <span key={i}>
+                {part}
+                <span className="font-mono">openai_base_url</span>
+              </span>
+            ) : (
+              <span key={i}>{part}</span>
+            )
+          )}
         </p>
 
         <label className="mt-4 block">
-          <span className="mono-label text-[11px] text-console-muted">Preset</span>
+          <span className="mono-label text-[11px] text-console-muted">{t("apiProfile.preset")}</span>
           <select
             onChange={(event) => applyPreset(Number(event.target.value))}
             className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
@@ -61,38 +71,38 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
         </label>
 
         <label className="mt-4 block">
-          <span className="mono-label text-[11px] text-console-muted">Name</span>
+          <span className="mono-label text-[11px] text-console-muted">{t("common.name")}</span>
           <input
             autoFocus
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
-            placeholder="AiHubMix"
+            placeholder={t("apiProfile.namePlaceholder")}
           />
         </label>
 
         <label className="mt-4 block">
-          <span className="mono-label text-[11px] text-console-muted">Base URL</span>
+          <span className="mono-label text-[11px] text-console-muted">{t("apiProfile.baseUrl")}</span>
           <input
             value={baseUrl}
             onChange={(event) => setBaseUrl(event.target.value)}
             className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
-            placeholder="https://api.example.com/v1"
+            placeholder={t("apiProfile.urlPlaceholder")}
           />
         </label>
 
         <label className="mt-4 block">
-          <span className="mono-label text-[11px] text-console-muted">API Key</span>
+          <span className="mono-label text-[11px] text-console-muted">{t("apiProfile.apiKey")}</span>
           <input
             type="password"
             value={apiKey}
             onChange={(event) => setApiKey(event.target.value)}
             className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
-            placeholder="sk-..."
+            placeholder={t("apiProfile.keyPlaceholder")}
           />
         </label>
 
-        <p className="mt-3 text-xs leading-5 text-console-muted">No shell reload is required for the Codex app.</p>
+        <p className="mt-3 text-xs leading-5 text-console-muted">{t("apiProfile.noShellReload")}</p>
 
         <div className="mt-5 flex justify-end gap-2">
           <button
@@ -100,14 +110,14 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
             onClick={onCancel}
             className="rounded-lg border border-console-line px-3 py-2 font-mono text-sm text-console-muted hover:text-console-text"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
             disabled={!canSave}
             className="rounded-lg border border-console-green/60 bg-console-green/10 px-3 py-2 font-mono text-sm text-console-green hover:bg-console-green/20"
           >
-            Save profile
+            {t("apiProfile.saveProfile")}
           </button>
         </div>
       </form>

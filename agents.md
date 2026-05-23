@@ -63,6 +63,23 @@
 - The tray/menu bar menu should allow quick account switching, opening the main window, adding an auth file, and quitting.
 - Product name should be `auth-switch`.
 
+## i18n — Internationalization
+
+- The app supports **English (en)** and **Simplified Chinese (zh)**.
+- Translation files live at `src/renderer/i18n/locales/en.json` and `src/renderer/i18n/locales/zh.json`.
+- i18n is initialized in `src/renderer/i18n/index.ts` using `i18next` + `react-i18next` with statically bundled JSON files — **no CDN, no network calls**.
+- Language preference is persisted in `localStorage` under the key `auth-switch-lang`.
+- A language toggle (**EN / 中文**) is displayed in the app header.
+
+### i18n rule for all new UI text
+**Every time a hardcoded string is added or changed in any renderer component, the corresponding key must be added/updated in BOTH `en.json` and `zh.json` in the same commit.**
+
+- Use `useTranslation()` from `react-i18next` in every renderer component.
+- Call `t("key")` for static strings and `t("key", { name })` for interpolated strings.
+- Key naming convention: `<feature>.<description>` e.g. `firstRun.title`, `common.cancel`, `notice.switchedTo`.
+- Do **not** hardcode UI strings in `.tsx` components — always go through `t()`.
+- Tray/native menu strings (in `src/main/tray.ts`) are system-rendered and do not go through i18n; keep them in English.
+
 ## Repository/process preferences
 
 - Keep implementation plans in the `plans/` folder.

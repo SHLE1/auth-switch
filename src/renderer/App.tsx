@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, LockKeyhole } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { setLanguage } from "./i18n/index";
 import { useAccounts } from "./hooks/useAccounts";
 import type { Account, CodexApiProfileInput, ImportResult } from "./types";
 import { AccountList } from "./components/AccountList";
@@ -11,6 +13,7 @@ import { ImportButton } from "./components/ImportButton";
 import { RenameDialog } from "./components/RenameDialog";
 
 export default function App(): JSX.Element {
+  const { t, i18n } = useTranslation();
   const { accounts, current, loading, error, setError, refresh } = useAccounts();
   const [firstRunVisible, setFirstRunVisible] = useState(false);
   const [apiProfileVisible, setApiProfileVisible] = useState(false);
@@ -45,10 +48,14 @@ export default function App(): JSX.Element {
     try {
       const result = await window.authSwitch.switchAccount(account.id);
       if (!result.success) {
-        showError(result.error ?? "Switch failed.");
+        showError(result.error ?? t("error.switchFailed"));
         return;
       }
-      showNotice(result.alreadyCurrent ? `${account.name} is already current.` : `Switched to ${account.name}.`);
+      showNotice(
+        result.alreadyCurrent
+          ? t("notice.alreadyCurrent", { name: account.name })
+          : t("notice.switchedTo", { name: account.name })
+      );
       await refresh();
     } catch (err) {
       showError(err instanceof Error ? err.message : String(err));
@@ -60,7 +67,7 @@ export default function App(): JSX.Element {
     try {
       await window.authSwitch.renameAccount(renameTarget.id, name);
       setRenameTarget(null);
-      showNotice(`Renamed account to ${name}.`);
+      showNotice(t("notice.renamed", { name }));
       await refresh();
     } catch (err) {
       showError(err instanceof Error ? err.message : String(err));
@@ -71,7 +78,7 @@ export default function App(): JSX.Element {
     if (!deleteTarget) return;
     try {
       await window.authSwitch.deleteAccount(deleteTarget.id);
-      showNotice(`Deleted ${deleteTarget.name}.`);
+      showNotice(t("notice.deleted", { name: deleteTarget.name }));
       setDeleteTarget(null);
       await refresh();
     } catch (err) {
@@ -84,11 +91,11 @@ export default function App(): JSX.Element {
     try {
       const result = await window.authSwitch.createApiProfile(input);
       if (!result.success) {
-        showError(result.error ?? "Failed to save API profile.");
+        showError(result.error ?? t("error.saveApiProfileFailed"));
         return;
       }
       setApiProfileVisible(false);
-      showNotice(`Saved API profile ${result.account?.name ?? input.name}.`);
+      showNotice(t("notice.savedApiProfile", { name: result.account?.name ?? input.name }));
       await refresh();
     } catch (err) {
       showError(err instanceof Error ? err.message : String(err));
@@ -96,22 +103,51 @@ export default function App(): JSX.Element {
   }
 
   function handleImported(result: ImportResult): void {
-    const duplicateNote = result.duplicate ? " Duplicate content was ignored." : "";
-    const sameEmailNote = result.sameEmailExists ? " Another account with this email already exists." : "";
-    showNotice(`Imported ${result.account?.name ?? "auth.json"}.${duplicateNote}${sameEmailNote}`);
+    const duplicateNote = result.duplicate ? t("notice.duplicateIgnored") : "";
+    const sameEmailNote = result.sameEmailExists ? t("notice.sameEmailExists") : "";
+    showNotice(t("notice.imported", { name: result.account?.name ?? "auth.json" }) + duplicateNote + sameEmailNote);
     void refresh();
   }
+
+  const currentLang = i18n.language.startsWith("zh") ? "zh" : "en";
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-console-bg text-console-text">
       {/* ── Fixed header ── */}
       <header className="flex shrink-0 items-center justify-between border-b border-console-line px-5 py-4">
         <div>
-          <p className="mono-label text-[11px] text-console-green">local only</p>
+          <p className="mono-label text-[11px] text-console-green">{t("app.localOnly")}</p>
           <h1 className="mt-0.5 text-2xl font-semibold tracking-tight">auth-switch</h1>
         </div>
-        <div className="rounded-xl border border-console-line bg-console-panel p-2 text-console-green">
-          <LockKeyhole size={20} />
+        <div className="flex items-center gap-3">
+          {/* Language toggle */}
+          <div className="flex rounded-lg border border-console-line overflow-hidden font-mono text-xs">
+            <button
+              type="button"
+              onClick={() => setLanguage("en")}
+              className={`px-2.5 py-1.5 transition ${
+                currentLang === "en"
+                  ? "bg-console-green/20 text-console-green"
+                  : "text-console-muted hover:text-console-text"
+              }`}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage("zh")}
+              className={`px-2.5 py-1.5 border-l border-console-line transition ${
+                currentLang === "zh"
+                  ? "bg-console-green/20 text-console-green"
+                  : "text-console-muted hover:text-console-text"
+              }`}
+            >
+              中文
+            </button>
+          </div>
+          <div className="rounded-xl border border-console-line bg-console-panel p-2 text-console-green">
+            <LockKeyhole size={20} />
+          </div>
         </div>
       </header>
 
@@ -134,14 +170,14 @@ export default function App(): JSX.Element {
 
         <section className="mt-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="mono-label text-xs text-console-muted">Accounts</h2>
+            <h2 className="mono-label text-xs text-console-muted">{t("app.accounts")}</h2>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setApiProfileVisible(true)}
                 className="inline-flex items-center gap-2 rounded-lg border border-console-line bg-console-panel px-3 py-2 font-mono text-sm text-console-text transition hover:border-console-green/60 hover:text-console-green"
               >
-                Add API
+                {t("app.addApi")}
               </button>
               <ImportButton onImported={handleImported} onError={showError} />
             </div>
@@ -158,8 +194,8 @@ export default function App(): JSX.Element {
 
       {/* ── Fixed footer ── */}
       <footer className="shrink-0 border-t border-console-line px-5 py-3 text-xs leading-5 text-console-muted">
-        <p>Data is stored locally only. auth.json contains sensitive tokens.</p>
-        <p className="font-mono">DB: ~/.auth-switch/auth-switch.db</p>
+        <p>{t("app.footer.local")}</p>
+        <p className="font-mono">{t("app.footer.db")}</p>
       </footer>
 
       {firstRunVisible && (
@@ -186,13 +222,13 @@ export default function App(): JSX.Element {
 
       {deleteTarget && (
         <ConfirmDialog
-          title="Delete account?"
+          title={t("deleteDialog.title")}
           message={
             deleteTarget.is_current
-              ? "Switch to another account before deleting this one."
-              : `Delete "${deleteTarget.name}"? This will not touch ~/.codex/auth.json.`
+              ? t("deleteDialog.isCurrent")
+              : t("deleteDialog.confirm", { name: deleteTarget.name })
           }
-          confirmLabel={deleteTarget.is_current ? "OK" : "Delete"}
+          confirmLabel={deleteTarget.is_current ? t("common.ok") : t("common.delete")}
           destructive={!deleteTarget.is_current}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={() => {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { ImportResult } from "../types";
 
 interface ImportButtonProps {
@@ -8,6 +9,7 @@ interface ImportButtonProps {
 }
 
 export function ImportButton({ onImported, onError }: ImportButtonProps): JSX.Element {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
   async function handleImport(): Promise<void> {
@@ -17,7 +19,7 @@ export function ImportButton({ onImported, onError }: ImportButtonProps): JSX.El
       const result = await window.authSwitch.importAuthFile();
       if (result.cancelled) return;
       if (!result.success) {
-        onError(result.error ?? "Import failed.");
+        onError(result.error ?? t("error.importFailed"));
         return;
       }
       onImported(result);
@@ -36,7 +38,7 @@ export function ImportButton({ onImported, onError }: ImportButtonProps): JSX.El
       className="inline-flex items-center gap-2 rounded-lg border border-console-green/60 bg-console-green/10 px-3 py-2 font-mono text-sm text-console-green transition hover:bg-console-green/20"
     >
       <Plus size={16} />
-      {busy ? "Importing..." : "Add auth.json"}
+      {busy ? t("importButton.importing") : t("importButton.addAuth")}
     </button>
   );
 }
