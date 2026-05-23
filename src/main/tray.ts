@@ -31,7 +31,7 @@ export function rebuildTrayMenu(): void {
         label: account.name,
         type: "checkbox" as const,
         checked: account.is_current,
-        sublabel: account.email ?? undefined,
+        sublabel: account.kind === "api_key" ? account.base_url ?? undefined : account.email ?? undefined,
         click: () => {
           const result = switchAccount(account.id);
           if (result.success) {

@@ -1,5 +1,6 @@
 export type {
   Account,
+  CodexApiProfileInput,
   SwitchResult,
   ImportResult,
   LiveAuthStatus,

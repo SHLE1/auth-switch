@@ -60,4 +60,29 @@ function runMigrations(database: Database.Database): void {
 
     migrate();
   }
+
+  if (version < 2) {
+    const migrate = database.transaction(() => {
+      database.exec(`
+        ALTER TABLE accounts ADD COLUMN kind TEXT NOT NULL DEFAULT 'auth_json';
+        ALTER TABLE accounts ADD COLUMN base_url TEXT;
+        ALTER TABLE accounts ADD COLUMN model TEXT;
+      `);
+      database.pragma("user_version = 2");
+    });
+
+    migrate();
+  }
+
+  if (version < 3) {
+    const migrate = database.transaction(() => {
+      database.exec(`
+        DROP INDEX IF EXISTS idx_accounts_auth_hash;
+        CREATE INDEX IF NOT EXISTS idx_accounts_auth_hash ON accounts(auth_hash);
+      `);
+      database.pragma("user_version = 3");
+    });
+
+    migrate();
+  }
 }

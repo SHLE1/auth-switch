@@ -3,6 +3,7 @@ import { getBooleanSetting, setBooleanSetting } from "./db/settings";
 import {
   currentAccount,
   getLiveAuthStatus,
+  createApiProfile,
   importAuthFileFromPath,
   importLiveAuthFile,
   listAccounts,
@@ -48,6 +49,12 @@ export function registerIpc(): void {
     const importResult = importAuthFileFromPath(result.filePaths[0]);
     if (importResult.success) afterAccountsMutation();
     return importResult;
+  });
+
+  ipcMain.handle("create-api-profile", (_event, input) => {
+    const result = createApiProfile(input);
+    if (result.success) afterAccountsMutation();
+    return result;
   });
 
   ipcMain.handle("import-live-auth-file", (_event, name?: string, setCurrent?: boolean) => {

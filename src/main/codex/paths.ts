@@ -6,6 +6,10 @@ export function getCodexAuthPath(): string {
   return path.join(base, "auth.json");
 }
 
+export function getCodexConfigPath(): string {
+  return path.join(getCodexDir(), "config.toml");
+}
+
 export function getCodexDir(): string {
   return path.dirname(getCodexAuthPath());
 }

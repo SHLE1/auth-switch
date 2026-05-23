@@ -6,6 +6,7 @@ const api: AuthSwitchApi = {
   getCurrentAccount: () => ipcRenderer.invoke("get-current-account"),
   switchAccount: (id) => ipcRenderer.invoke("switch-account", id),
   importAuthFile: () => ipcRenderer.invoke("import-auth-file"),
+  createApiProfile: (input) => ipcRenderer.invoke("create-api-profile", input),
   importLiveAuthFile: (name, setCurrent) => ipcRenderer.invoke("import-live-auth-file", name, setCurrent),
   renameAccount: (id, name) => ipcRenderer.invoke("rename-account", id, name),
   deleteAccount: (id) => ipcRenderer.invoke("delete-account", id),
