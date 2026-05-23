@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { AlertTriangle, LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { setLanguage } from "./i18n/index";
@@ -6,7 +6,6 @@ import { useAccounts } from "./hooks/useAccounts";
 import type { Account, CodexApiProfileInput, ImportResult } from "./types";
 import { AccountList } from "./components/AccountList";
 import { ApiProfileDialog } from "./components/ApiProfileDialog";
-import { ConfirmDialog } from "./components/ConfirmDialog";
 import { CurrentAccountCard } from "./components/CurrentAccountCard";
 import { FirstRunDialog } from "./components/FirstRunDialog";
 import { ImportButton } from "./components/ImportButton";
@@ -18,7 +17,6 @@ export default function App(): JSX.Element {
   const [firstRunVisible, setFirstRunVisible] = useState(false);
   const [apiProfileVisible, setApiProfileVisible] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Account | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Account | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const showError = useCallback(
@@ -74,16 +72,36 @@ export default function App(): JSX.Element {
     }
   }
 
-  async function handleDelete(): Promise<void> {
-    if (!deleteTarget) return;
+  async function handleDelete(account: Account): Promise<void> {
     try {
-      await window.authSwitch.deleteAccount(deleteTarget.id);
-      showNotice(t("notice.deleted", { name: deleteTarget.name }));
-      setDeleteTarget(null);
+      await window.authSwitch.deleteAccount(account.id);
+      showNotice(t("notice.deleted", { name: account.name }));
       await refresh();
     } catch (err) {
       showError(err instanceof Error ? err.message : String(err));
-      setDeleteTarget(null);
+    }
+  }
+
+  async function requestDelete(account: Account): Promise<void> {
+    if (account.is_current) {
+      try {
+        await window.authSwitch.nativeMessage(t("deleteDialog.title"), t("deleteDialog.isCurrent"), t("common.ok"));
+      } catch (err) {
+        showError(err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    try {
+      const confirmed = await window.authSwitch.nativeConfirm(
+        t("deleteDialog.title"),
+        t("deleteDialog.confirm", { name: account.name }),
+        t("common.delete"),
+        t("common.cancel")
+      );
+      if (confirmed) await handleDelete(account);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -110,16 +128,26 @@ export default function App(): JSX.Element {
   }
 
   const currentLang = i18n.language.startsWith("zh") ? "zh" : "en";
+  const dragRegionStyle = { WebkitAppRegion: "drag" } as CSSProperties;
+  const noDragRegionStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
+  const isMac = /Macintosh/.test(navigator.userAgent);
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-console-bg text-console-text">
+    <main className="flex h-screen flex-col overflow-hidden bg-transparent text-console-text">
+      {/* macOS traffic-light spacer — gives the inset traffic lights unobstructed space */}
+      {isMac && (
+        <div style={dragRegionStyle} className="h-8 w-full shrink-0" />
+      )}
       {/* ── Fixed header ── */}
-      <header className="flex shrink-0 items-center justify-between border-b border-console-line px-5 py-4">
+      <header
+        style={dragRegionStyle}
+        className="flex shrink-0 items-center justify-between border-b border-console-line bg-[rgba(8,11,15,0.85)] px-5 py-4"
+      >
         <div>
           <p className="mono-label text-[11px] text-console-green">{t("app.localOnly")}</p>
           <h1 className="mt-0.5 text-2xl font-semibold tracking-tight">auth-switch</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div style={noDragRegionStyle} className="flex items-center gap-3">
           {/* Language toggle */}
           <div className="flex rounded-lg border border-console-line overflow-hidden font-mono text-xs">
             <button
@@ -152,7 +180,7 @@ export default function App(): JSX.Element {
       </header>
 
       {/* ── Scrollable body — grows to fill remaining height ── */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[rgba(8,11,15,0.82)] px-5 py-4">
         <CurrentAccountCard account={current} />
 
         {(error ?? notice) && (
@@ -187,13 +215,13 @@ export default function App(): JSX.Element {
             loading={loading}
             onSwitch={(account) => void handleSwitch(account)}
             onRename={setRenameTarget}
-            onDelete={setDeleteTarget}
+            onDelete={(account) => void requestDelete(account)}
           />
         </section>
       </div>
 
       {/* ── Fixed footer ── */}
-      <footer className="shrink-0 border-t border-console-line px-5 py-3 text-xs leading-5 text-console-muted">
+      <footer className="shrink-0 border-t border-console-line bg-[rgba(8,11,15,0.85)] px-5 py-3 text-xs leading-5 text-console-muted">
         <p>{t("app.footer.local")}</p>
         <p className="font-mono">{t("app.footer.db")}</p>
       </footer>
@@ -220,26 +248,6 @@ export default function App(): JSX.Element {
         />
       )}
 
-      {deleteTarget && (
-        <ConfirmDialog
-          title={t("deleteDialog.title")}
-          message={
-            deleteTarget.is_current
-              ? t("deleteDialog.isCurrent")
-              : t("deleteDialog.confirm", { name: deleteTarget.name })
-          }
-          confirmLabel={deleteTarget.is_current ? t("common.ok") : t("common.delete")}
-          destructive={!deleteTarget.is_current}
-          onCancel={() => setDeleteTarget(null)}
-          onConfirm={() => {
-            if (deleteTarget.is_current) {
-              setDeleteTarget(null);
-            } else {
-              void handleDelete();
-            }
-          }}
-        />
-      )}
     </main>
   );
 }

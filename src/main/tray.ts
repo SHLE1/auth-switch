@@ -4,6 +4,7 @@ import path from "node:path";
 import { importAuthFileFromPath, listAccounts, switchAccount } from "./services/accountsService";
 import { broadcastAccountsChanged, getMainWindow, setQuitting, showMainWindow } from "./window";
 import { notify } from "./notifications";
+import { tMain } from "./i18n";
 
 let tray: Tray | null = null;
 
@@ -17,13 +18,24 @@ export function createTray(): Tray | null {
   }
 
   tray = new Tray(icon);
-  tray.setToolTip("auth-switch");
+  tray.setToolTip(tMain("tray.tooltip"));
+
+  if (process.platform === "win32") {
+    tray.on("click", () => showMainWindow());
+    tray.on("double-click", () => showMainWindow());
+  } else {
+    tray.on("double-click", () => showMainWindow());
+  }
+
   rebuildTrayMenu();
   return tray;
 }
 
 export function rebuildTrayMenu(): void {
   if (!tray) return;
+
+  // Update tooltip in case language changed
+  tray.setToolTip(tMain("tray.tooltip"));
 
   const accounts = listAccounts();
   const accountItems: MenuItemConstructorOptions[] = accounts.length
@@ -38,14 +50,14 @@ export function rebuildTrayMenu(): void {
             rebuildTrayMenu();
             broadcastAccountsChanged();
             if (!result.alreadyCurrent && result.account) {
-              notify("auth-switch", `Switched to ${result.account.name}`);
+              notify("auth-switch", tMain("notify.switchedTo", { name: result.account.name }));
             }
           } else if (result.error) {
             notify("auth-switch", result.error);
           }
         }
       }))
-    : [{ label: "No accounts imported", enabled: false }];
+    : [{ label: tMain("tray.noAccounts"), enabled: false }];
 
   const template: MenuItemConstructorOptions[] = [
     { label: "auth-switch", enabled: false },
@@ -53,7 +65,7 @@ export function rebuildTrayMenu(): void {
     ...accountItems,
     { type: "separator" },
     {
-      label: "Add auth.json...",
+      label: tMain("tray.addAuth"),
       click: async () => {
         // On macOS the app must be frontmost before showing a file dialog from
         // the menu bar, otherwise the picker is hidden behind other windows.
@@ -64,7 +76,7 @@ export function rebuildTrayMenu(): void {
 
         const window = getMainWindow();
         const options = {
-          title: "Import Codex auth.json",
+          title: tMain("tray.importDialogTitle"),
           properties: ["openFile"] as ["openFile"],
           filters: [
             { name: "JSON", extensions: ["json"] },
@@ -87,10 +99,11 @@ export function rebuildTrayMenu(): void {
       }
     },
     { type: "separator" },
-    { label: "Open main window", click: () => showMainWindow() },
+    { label: tMain("tray.openWindow"), accelerator: process.platform === "darwin" ? "Command+," : undefined, click: () => showMainWindow() },
     { type: "separator" },
     {
-      label: "Quit",
+      label: tMain("tray.quit"),
+      accelerator: process.platform === "darwin" ? "Command+Q" : process.platform === "win32" ? "Ctrl+Q" : undefined,
       click: () => {
         setQuitting(true);
         app.quit();
@@ -102,7 +115,7 @@ export function rebuildTrayMenu(): void {
 }
 
 function loadTrayIcon(): Electron.NativeImage {
-  const iconFile = process.platform === "darwin" ? "tray-icon.png" : "tray-icon.png";
+  const iconFile = "tray-icon.png";
   const candidates = [
     path.join(process.cwd(), "assets", iconFile),
     path.join(process.resourcesPath, "assets", iconFile),

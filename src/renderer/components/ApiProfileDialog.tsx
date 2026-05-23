@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { CodexApiProfileInput } from "../types";
 
 interface ApiProfileDialogProps {
@@ -20,8 +21,18 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
   const [name, setName] = useState("Custom API");
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
+  const containerRef = useFocusTrap<HTMLDivElement>(true);
 
   const canSave = name.trim().length > 0 && apiKey.trim().length > 0 && baseUrl.trim().length > 0;
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape") onCancel();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
 
   function applyPreset(index: number): void {
     const preset = presets[index];
@@ -31,7 +42,13 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5">
+    <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="api-profile-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5"
+    >
       <form
         className="w-full max-w-lg rounded-2xl border border-console-line bg-console-panel p-5 shadow-2xl"
         onSubmit={(event) => {
@@ -41,7 +58,9 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
           }
         }}
       >
-        <h2 className="text-lg font-semibold text-console-text">{t("apiProfile.title")}</h2>
+        <h2 id="api-profile-dialog-title" className="text-lg font-semibold text-console-text">
+          {t("apiProfile.title")}
+        </h2>
         <p className="mt-2 text-sm leading-5 text-console-muted">
           {t("apiProfile.desc").split("openai_base_url").map((part, i, arr) =>
             i < arr.length - 1 ? (
@@ -73,7 +92,7 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
         <label className="mt-4 block">
           <span className="mono-label text-[11px] text-console-muted">{t("common.name")}</span>
           <input
-            autoFocus
+            data-autofocus
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"

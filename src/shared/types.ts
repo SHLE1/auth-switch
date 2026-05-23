@@ -50,6 +50,9 @@ export interface AuthSwitchApi {
   importLiveAuthFile(name?: string, setCurrent?: boolean): Promise<ImportResult>;
   renameAccount(id: string, name: string): Promise<void>;
   deleteAccount(id: string): Promise<void>;
+  nativeConfirm(title: string, message: string, confirmLabel: string, cancelLabel: string): Promise<boolean>;
+  nativeMessage(title: string, message: string, buttonLabel: string): Promise<void>;
+  setLanguage(locale: string): Promise<void>;
   getLiveAuthStatus(): Promise<LiveAuthStatus>;
   dismissFirstRun(): Promise<void>;
   shouldShowFirstRun(): Promise<boolean>;

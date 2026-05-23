@@ -1,5 +1,6 @@
 import { dialog, ipcMain } from "electron";
 import { getBooleanSetting, setBooleanSetting } from "./db/settings";
+import { setMainLocale, tMain } from "./i18n";
 import {
   currentAccount,
   getLiveAuthStatus,
@@ -24,7 +25,7 @@ export function registerIpc(): void {
     if (result.success) {
       afterAccountsMutation();
       if (!result.alreadyCurrent && result.account) {
-        notify("auth-switch", `Switched to ${result.account.name}`);
+        notify("auth-switch", tMain("notify.switchedTo", { name: result.account.name }));
       }
     }
     return result;
@@ -73,6 +74,40 @@ export function registerIpc(): void {
     afterAccountsMutation();
   });
 
+  ipcMain.handle(
+    "native-confirm",
+    async (_event, title: string, message: string, confirmLabel: string, cancelLabel: string) => {
+      const window = getMainWindow();
+      const options = {
+        type: "warning" as const,
+        buttons: [cancelLabel, confirmLabel],
+        defaultId: 0,
+        cancelId: 0,
+        title,
+        message
+      };
+      const result = window ? await dialog.showMessageBox(window, options) : await dialog.showMessageBox(options);
+      return result.response === 1;
+    }
+  );
+
+  ipcMain.handle("native-message", async (_event, title: string, message: string, buttonLabel: string) => {
+    const window = getMainWindow();
+    const options = {
+      type: "info" as const,
+      buttons: [buttonLabel],
+      defaultId: 0,
+      cancelId: 0,
+      title,
+      message
+    };
+    if (window) {
+      await dialog.showMessageBox(window, options);
+    } else {
+      await dialog.showMessageBox(options);
+    }
+  });
+
   ipcMain.handle("get-live-auth-status", () => getLiveAuthStatus());
 
   ipcMain.handle("dismiss-first-run", () => {
@@ -80,6 +115,11 @@ export function registerIpc(): void {
   });
 
   ipcMain.handle("should-show-first-run", () => !getBooleanSetting("first_run_done"));
+
+  ipcMain.handle("set-language", (_event, locale: string) => {
+    setMainLocale(locale);
+    rebuildTrayMenu();
+  });
 }
 
 function afterAccountsMutation(): void {

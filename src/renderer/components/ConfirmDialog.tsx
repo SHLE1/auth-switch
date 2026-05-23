@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 interface ConfirmDialogProps {
   title: string;
@@ -18,11 +20,29 @@ export function ConfirmDialog({
   onConfirm
 }: ConfirmDialogProps): JSX.Element {
   const { t } = useTranslation();
+  const containerRef = useFocusTrap<HTMLDivElement>(true);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape") onCancel();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5">
+    <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5"
+    >
       <section className="w-full max-w-sm rounded-2xl border border-console-line bg-console-panel p-5 shadow-2xl">
-        <h2 className="text-lg font-semibold text-console-text">{title}</h2>
+        <h2 id="confirm-dialog-title" className="text-lg font-semibold text-console-text">
+          {title}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-console-muted">{message}</p>
         <div className="mt-5 flex justify-end gap-2">
           <button

@@ -10,6 +10,10 @@ const api: AuthSwitchApi = {
   importLiveAuthFile: (name, setCurrent) => ipcRenderer.invoke("import-live-auth-file", name, setCurrent),
   renameAccount: (id, name) => ipcRenderer.invoke("rename-account", id, name),
   deleteAccount: (id) => ipcRenderer.invoke("delete-account", id),
+  nativeConfirm: (title, message, confirmLabel, cancelLabel) =>
+    ipcRenderer.invoke("native-confirm", title, message, confirmLabel, cancelLabel),
+  nativeMessage: (title, message, buttonLabel) => ipcRenderer.invoke("native-message", title, message, buttonLabel),
+  setLanguage: (locale) => ipcRenderer.invoke("set-language", locale),
   getLiveAuthStatus: () => ipcRenderer.invoke("get-live-auth-status"),
   dismissFirstRun: () => ipcRenderer.invoke("dismiss-first-run"),
   shouldShowFirstRun: () => ipcRenderer.invoke("should-show-first-run"),
