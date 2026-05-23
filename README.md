@@ -15,7 +15,7 @@
 
 ## Development status
 
-The repository is initialized. Implementation has not started yet.
+MVP implementation is in progress and currently includes the Electron/React app shell, local SQLite storage, Codex auth file import/switch operations, first-run flow, and tray/menu-bar quick switching. `npm run typecheck` and `npm run build` pass locally.
 
 ## Planning
 
