@@ -15,12 +15,12 @@
 
 body {
   margin: 0;
-  min-width: 520px;
-  min-height: 600px;
+  min-width: 480px;
+  min-height: 520px;
   overflow: hidden;
   background:
     radial-gradient(circle at top left, rgba(126, 231, 135, 0.08), transparent 28rem),
-    #080b0f;
+    rgba(8, 11, 15, 0.82);
 }
 
 button,

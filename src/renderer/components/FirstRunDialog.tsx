@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { LiveAuthStatus } from "../types";
 
 interface FirstRunDialogProps {
@@ -12,6 +13,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
   const [status, setStatus] = useState<LiveAuthStatus | null>(null);
   const [name, setName] = useState(t("firstRun.unnamedAccount"));
   const [busy, setBusy] = useState(false);
+  const containerRef = useFocusTrap<HTMLDivElement>(true);
 
   useEffect(() => {
     window.authSwitch
@@ -22,6 +24,17 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
       })
       .catch((error) => onError(error instanceof Error ? error.message : String(error)));
   }, [onError, t]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape" && !busy) {
+        void dismiss();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [busy]);
 
   async function dismiss(): Promise<void> {
     try {
@@ -49,22 +62,31 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-5">
+    <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="first-run-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-5"
+    >
       <section className="w-full max-w-md rounded-2xl border border-console-line bg-console-panel p-6 shadow-2xl">
         <p className="mono-label text-[11px] text-console-green">{t("firstRun.label")}</p>
-        <h2 className="mt-3 text-xl font-semibold text-console-text">{t("firstRun.title")}</h2>
+        <h2 id="first-run-dialog-title" className="mt-3 text-xl font-semibold text-console-text">
+          {t("firstRun.title")}
+        </h2>
 
         {!status ? (
-          <p className="mt-4 font-mono text-sm text-console-muted">{t("firstRun.checking")}</p>
+          <p data-autofocus tabIndex={-1} className="mt-4 font-mono text-sm text-console-muted">
+            {t("firstRun.checking")}
+          </p>
         ) : status.exists ? (
           <>
             <p className="mt-4 text-sm leading-6 text-console-muted">
-              {t("firstRun.detectedPrefix")}{" "}
-              <span className="font-mono text-console-text">~/.codex/auth.json</span>
+              {t("firstRun.detectedPrefix")} <span className="font-mono text-console-text">~/.codex/auth.json</span>
               {status.email ? (
                 <>
-                  {" "}{t("firstRun.detectedFor")}{" "}
-                  <span className="font-mono text-console-green">{status.email}</span>
+                  {" "}
+                  {t("firstRun.detectedFor")} <span className="font-mono text-console-green">{status.email}</span>
                 </>
               ) : null}
               {t("firstRun.detectedSuffix")}
@@ -72,6 +94,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
             <label className="mt-4 block">
               <span className="mono-label text-[11px] text-console-muted">{t("common.name")}</span>
               <input
+                data-autofocus
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
@@ -88,6 +111,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
               </button>
               <button
                 type="button"
+                data-autofocus={!status.email ? true : undefined}
                 disabled={busy || !name.trim()}
                 onClick={() => void handleImport()}
                 className="rounded-lg border border-console-green/60 bg-console-green/10 px-3 py-2 font-mono text-sm text-console-green hover:bg-console-green/20"
@@ -102,6 +126,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
             <div className="mt-5 flex justify-end">
               <button
                 type="button"
+                data-autofocus
                 onClick={() => void dismiss()}
                 className="rounded-lg border border-console-green/60 bg-console-green/10 px-3 py-2 font-mono text-sm text-console-green hover:bg-console-green/20"
               >
