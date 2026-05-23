@@ -82,6 +82,7 @@
 
 ## Repository/process preferences
 
+- Use `pnpm` for dependency management and scripts. Do not use `npm install`, `npm run`, or commit `package-lock.json`.
 - Keep implementation plans in the `plans/` folder.
 - Save each agent-generated plan as a separate file in `plans/`.
 - Build a DMG whenever there is a new feature or fix, without waiting to be asked.
