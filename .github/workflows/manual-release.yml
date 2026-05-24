@@ -292,7 +292,7 @@ jobs:
             "$RUNNER_TEMP/generated-release-notes-body.md" > "$CLEAN_GENERATED_FILE"
 
           if [ -s "$CLEAN_GENERATED_FILE" ]; then
-            if grep -Eq '^## What's Changed' "$CLEAN_GENERATED_FILE"; then
+            if grep -Fq "## What's Changed" "$CLEAN_GENERATED_FILE"; then
               cat "$CLEAN_GENERATED_FILE" > "$RUNNER_TEMP/release-notes.md"
             else
               {
