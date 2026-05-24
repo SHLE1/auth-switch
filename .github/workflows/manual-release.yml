@@ -420,7 +420,7 @@ jobs:
           end
           RUBY
 
-          xmllint --noout "$APPCAST_PATH"
+          ruby -rrexml/document -e 'REXML::Document.new(File.read(ARGV.fetch(0)))' "$APPCAST_PATH"
           echo "appcast_path=$APPCAST_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub Release
