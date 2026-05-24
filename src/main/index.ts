@@ -2,8 +2,6 @@ import { app, globalShortcut, nativeTheme } from "electron";
 import { createMainWindow, getMainWindow, hideMainWindow, setQuitting, showMainWindow } from "./window";
 import { registerIpc } from "./ipc";
 import { initDatabase } from "./db/database";
-import { getBooleanSetting } from "./db/settings";
-import { listAccounts } from "./services/accountsService";
 import { buildAppMenu } from "./menu";
 import { createTray } from "./tray";
 import { configureAutoUpdates, scheduleAutomaticUpdateCheck } from "./updater";
@@ -42,14 +40,7 @@ if (!gotSingleInstanceLock) {
       });
     }
 
-    const firstRunDone = getBooleanSetting("first_run_done");
-    const hasAccounts = listAccounts().length > 0;
-
-    if (!firstRunDone || !hasAccounts) {
-      createMainWindow();
-    } else if (process.platform === "darwin") {
-      app.dock?.hide();
-    }
+    createMainWindow();
 
     app.on("activate", () => {
       if (!getMainWindow()) {

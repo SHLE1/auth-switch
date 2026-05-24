@@ -126,18 +126,22 @@ function loadTrayIcon(): Electron.NativeImage {
   const candidates = [
     path.join(process.cwd(), "assets", iconFile),
     path.join(process.resourcesPath, "assets", iconFile),
+    path.join(process.resourcesPath, "app.asar.unpacked", "assets", iconFile),
+    path.join(app.getAppPath(), "assets", iconFile),
     path.join(__dirname, "../../assets", iconFile)
   ];
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
-      const image = nativeImage.createFromPath(candidate);
+      const image = nativeImage.createFromBuffer(fs.readFileSync(candidate));
       if (process.platform === "darwin") image.setTemplateImage(true);
       return image;
     }
   }
 
-  return nativeImage.createFromDataURL(
+  const fallback = nativeImage.createFromDataURL(
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAFElEQVR42mP8z8Dwn4GKgImaho0aAQB6uwIoMsPZ7AAAAABJRU5ErkJggg=="
   );
+  if (process.platform === "darwin") fallback.setTemplateImage(true);
+  return fallback;
 }

@@ -5,6 +5,11 @@ files:
   - out/**
   - assets/**
   - package.json
+extraResources:
+  - from: assets
+    to: assets
+    filter:
+      - tray-icon*.png
 directories:
   output: release
 npmRebuild: true

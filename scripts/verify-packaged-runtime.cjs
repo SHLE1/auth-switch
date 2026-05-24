@@ -34,9 +34,15 @@ function verifyAsar(appAsar) {
   const files = asar.listPackage(appAsar);
   const normalizedFiles = new Map(files.map((file) => [normalizeAsarPath(file), file]));
   const mainBundlePath = "/out/main/index.js";
+  const resourcesDir = path.dirname(appAsar);
+  const externalTrayIcon = path.join(resourcesDir, "assets", "tray-icon.png");
 
   if (!normalizedFiles.has(mainBundlePath)) {
     throw new Error(`${appAsar}: missing ${mainBundlePath}`);
+  }
+
+  if (!fs.existsSync(externalTrayIcon) && !normalizedFiles.has("/assets/tray-icon.png")) {
+    throw new Error(`${appAsar}: missing packaged tray icon`);
   }
 
   const mainSources = [...normalizedFiles.entries()]
