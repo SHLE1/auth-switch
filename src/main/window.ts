@@ -25,8 +25,8 @@ export function createMainWindow(): BrowserWindow {
 
   mainWindow = new BrowserWindow({
     ...savedBounds,
-    minWidth: 480,
-    minHeight: 520,
+    minWidth: 400,
+    minHeight: 280,
     resizable: true,
     show: false,
     title: "auth-switch",
@@ -151,8 +151,8 @@ function isAllowedNavigationUrl(targetUrl: string): boolean {
 }
 
 function getVisibleWindowBounds(savedBounds: WindowBoundsSetting): WindowBoundsSetting {
-  const width = Math.max(480, savedBounds.width);
-  const height = Math.max(520, savedBounds.height);
+  const width = Math.max(400, savedBounds.width);
+  const height = Math.max(280, savedBounds.height);
   const x = typeof savedBounds.x === "number" ? savedBounds.x : undefined;
   const y = typeof savedBounds.y === "number" ? savedBounds.y : undefined;
 

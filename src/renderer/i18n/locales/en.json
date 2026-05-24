@@ -2,9 +2,8 @@
   "app.localOnly": "local only",
   "app.accounts": "Accounts",
   "app.addApi": "Add API",
-  "app.footer.local": "Data is stored locally only. auth.json contains sensitive tokens.",
-  "app.footer.db": "DB: ~/.auth-switch/auth-switch.db",
-
+  "app.footer.local": "Local only",
+  "app.footer.db": "~/.auth-switch/auth-switch.db",
   "notice.alreadyCurrent": "{{name}} is already current.",
   "notice.switchedTo": "Switched to {{name}}.",
   "notice.renamed": "Renamed account to {{name}}.",
@@ -13,11 +12,9 @@
   "notice.imported": "Imported {{name}}.",
   "notice.duplicateIgnored": " Duplicate content was ignored.",
   "notice.sameEmailExists": " Another account with this email already exists.",
-
   "error.switchFailed": "Switch failed.",
   "error.importFailed": "Import failed.",
   "error.saveApiProfileFailed": "Failed to save API profile.",
-
   "common.cancel": "Cancel",
   "common.ok": "OK",
   "common.delete": "Delete",
@@ -26,7 +23,6 @@
   "common.skip": "Skip",
   "common.confirm": "Confirm",
   "common.name": "Name",
-
   "firstRun.label": "First run",
   "firstRun.title": "Welcome to auth-switch",
   "firstRun.checking": "Checking ~/.codex/auth.json...",
@@ -35,12 +31,9 @@
   "firstRun.detectedSuffix": ". Import it as your first account?",
   "firstRun.unnamedAccount": "Unnamed account",
   "firstRun.noFile": "No Codex auth file found yet. Log in to Codex first, then import your auth.json here.",
-
   "accountList.loading": "Loading accounts...",
   "accountList.empty": "No accounts imported yet. Add a Codex auth.json to begin.",
-
   "rename.title": "Rename account",
-
   "currentAccount.label": "Current Codex Account",
   "currentAccount.apiProfile": "API profile",
   "currentAccount.emailUnavailable": "email unavailable",
@@ -48,7 +41,6 @@
   "currentAccount.activeAuth": "Active · ~/.codex/auth.json",
   "currentAccount.noAccount": "No current account",
   "currentAccount.noAccountDesc": "Import an auth.json, then switch to it to make it active for Codex.",
-
   "apiProfile.title": "Add Codex API profile",
   "apiProfile.desc": "Creates a Codex profile that writes API-key auth.json and only manages the openai_base_url line in config.toml. Switching back to auth.json comments that line out.",
   "apiProfile.preset": "Preset",
@@ -59,17 +51,15 @@
   "apiProfile.namePlaceholder": "AiHubMix",
   "apiProfile.urlPlaceholder": "https://api.example.com/v1",
   "apiProfile.keyPlaceholder": "sk-...",
-
   "accountRow.current": "current",
   "accountRow.switch": "Switch",
   "accountRow.rename": "Rename",
   "accountRow.delete": "Delete",
   "accountRow.apiEnv": "api env",
-
   "deleteDialog.title": "Delete account?",
   "deleteDialog.isCurrent": "Switch to another account before deleting this one.",
   "deleteDialog.confirm": "Delete \"{{name}}\"? This will not touch ~/.codex/auth.json.",
-
   "importButton.importing": "Importing...",
-  "importButton.addAuth": "Add auth.json"
+  "importButton.addAuth": "Add auth.json",
+  "accountRow.switching": "Switching..."
 }

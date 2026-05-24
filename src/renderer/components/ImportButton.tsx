@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import type { ImportResult } from "../types";
 
 interface ImportButtonProps {
@@ -31,14 +32,14 @@ export function ImportButton({ onImported, onError }: ImportButtonProps): JSX.El
   }
 
   return (
-    <button
-      type="button"
+    <Button
+      size="sm"
       disabled={busy}
       onClick={() => void handleImport()}
-      className="inline-flex items-center gap-2 rounded-lg border border-console-green/60 bg-console-green/10 px-3 py-2 font-mono text-sm text-console-green transition hover:bg-console-green/20"
+      className="h-7 gap-1 px-2.5 font-mono text-xs"
     >
-      <Plus size={16} />
+      <Plus size={12} />
       {busy ? t("importButton.importing") : t("importButton.addAuth")}
-    </button>
+    </Button>
   );
 }

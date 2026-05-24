@@ -1,67 +1,119 @@
-import { Check, MoreHorizontal, Trash2 } from "lucide-react";
+import { Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Account } from "../types";
 
 interface AccountRowProps {
   account: Account;
+  switchingId: string | null;
   onSwitch: (account: Account) => void;
   onRename: (account: Account) => void;
   onDelete: (account: Account) => void;
 }
 
-export function AccountRow({ account, onSwitch, onRename, onDelete }: AccountRowProps): JSX.Element {
+export function AccountRow({
+  account,
+  switchingId,
+  onSwitch,
+  onRename,
+  onDelete,
+}: AccountRowProps): JSX.Element {
   const { t } = useTranslation();
+  const isSwitching = switchingId === account.id;
 
   return (
-    <li className="rounded-xl border border-console-line bg-[#0b1017] p-3">
-      <div className="flex items-start gap-3">
-        <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full border border-console-line text-console-green">
-          {account.is_current ? <Check size={14} /> : null}
-        </div>
+    <li className="flex items-center gap-3 px-3 py-2.5">
+      {/* Active indicator dot */}
+      <span
+        className={cn(
+          "size-3.5 shrink-0 rounded-full border transition-colors duration-150",
+          account.is_current
+            ? "border-foreground bg-foreground animate-dot-fill"
+            : "border-border bg-transparent"
+        )}
+      />
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="truncate text-sm font-semibold text-console-text">{account.name}</h3>
-              <p className="truncate font-mono text-xs text-console-muted">
-                {account.kind === "api_key"
-                  ? account.base_url ?? t("currentAccount.apiProfile")
-                  : account.email ?? t("currentAccount.emailUnavailable")}
-              </p>
-            </div>
-            {account.is_current ? (
-              <span className="rounded-full border border-console-green/40 px-2 py-1 font-mono text-[11px] text-console-green">
-                {t("accountRow.current")}
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onSwitch(account)}
-                className="rounded-md border border-console-line px-3 py-1.5 font-mono text-xs text-console-text transition hover:border-console-green/60 hover:text-console-green"
-              >
-                {t("accountRow.switch")}
-              </button>
-            )}
+      {/* Main content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium leading-snug">{account.name}</p>
+            <p className="truncate font-mono text-xs text-muted-foreground">
+              {account.kind === "api_key"
+                ? account.base_url ?? t("currentAccount.apiProfile")
+                : account.email ?? t("currentAccount.emailUnavailable")}
+            </p>
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
-            <span className="rounded-md border border-console-line px-2 py-1 font-mono text-[11px] text-console-muted">
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground">
               {account.kind === "api_key" ? t("accountRow.apiEnv") : "auth.json"}
-            </span>
-            <button
-              type="button"
-              onClick={() => onRename(account)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs text-console-muted transition hover:bg-white/5 hover:text-console-text"
-            >
-              <MoreHorizontal size={14} /> {t("accountRow.rename")}
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(account)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs text-console-muted transition hover:bg-console-red/10 hover:text-console-red"
-            >
-              <Trash2 size={14} /> {t("accountRow.delete")}
-            </button>
+            </Badge>
+
+            {account.is_current ? (
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                {t("accountRow.current")}
+              </Badge>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isSwitching || !!switchingId}
+                onClick={() => onSwitch(account)}
+                className={cn(
+                  "h-7 px-2.5 font-mono text-xs",
+                  "active:scale-[0.97] transition-transform duration-100"
+                )}
+              >
+                {isSwitching ? (
+                  <>
+                    <Loader2 size={11} className="animate-spin" />
+                    {t("accountRow.switching")}
+                  </>
+                ) : (
+                  t("accountRow.switch")
+                )}
+              </Button>
+            )}
+
+            {/* ··· dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-muted-foreground"
+                >
+                  <MoreHorizontal size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuItem
+                  onClick={() => onRename(account)}
+                  className="gap-2 font-mono text-xs"
+                >
+                  <Pencil size={12} />
+                  {t("accountRow.rename")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(account)}
+                  className="gap-2 font-mono text-xs text-destructive focus:text-destructive"
+                >
+                  <Trash2 size={12} />
+                  {t("accountRow.delete")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@
 ## Product decisions
 
 - Target platforms: macOS and Windows.
+- **Cross-platform rule: every code change — paths, dialogs, tray, shortcuts, packaging, UI layout — must be reviewed for macOS AND Windows compatibility in the same commit. Never ship a change that only works on one platform.**
 - Tech stack preference: Electron + React.
 - UI direction: tool-like console interface, clear and compact.
 - Primary product value: minimal one-click switching.

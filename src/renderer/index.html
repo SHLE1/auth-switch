@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>auth-switch</title>
+    <!-- Apply theme class synchronously to prevent flash of unstyled content -->
+    <script>
+      (function () {
+        var stored = localStorage.getItem("auth-switch-theme");
+        if (stored === "dark" || stored === "light") {
+          if (stored === "dark") document.documentElement.classList.add("dark");
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
