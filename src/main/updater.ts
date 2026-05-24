@@ -1,5 +1,6 @@
 import { app, dialog } from "electron";
 import { tMain } from "./i18n";
+import { logMain } from "./logger";
 
 type AutoUpdater = typeof import("electron-updater").autoUpdater;
 
@@ -107,7 +108,7 @@ export async function configureAutoUpdates(): Promise<boolean> {
     await ensureAutoUpdatesConfigured();
     return true;
   } catch (error) {
-    console.error("[updater] auto updater unavailable; continuing without update checks", error);
+    logMain("[updater] auto updater unavailable; continuing without update checks", error);
     return false;
   }
 }
@@ -135,7 +136,7 @@ export async function checkForUpdates(options: { showNoUpdateDialog?: boolean } 
   const updater = await ensureAutoUpdatesConfigured().catch(async (error) => {
     checking = false;
     showResultForCurrentCheck = false;
-    console.error("[updater] auto updater unavailable", error);
+    logMain("[updater] auto updater unavailable", error);
 
     if (options.showNoUpdateDialog) {
       await dialog.showMessageBox({
