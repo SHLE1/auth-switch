@@ -6,6 +6,7 @@ import { broadcastAccountsChanged, getMainWindow, setQuitting, showMainWindow } 
 import { notify } from "./notifications";
 import { tMain } from "./i18n";
 import { checkForUpdates } from "./updater";
+import { logMain } from "./logger";
 
 let tray: Tray | null = null;
 
@@ -14,11 +15,12 @@ export function createTray(): Tray | null {
 
   const icon = loadTrayIcon();
   if (icon.isEmpty()) {
-    console.warn("Tray icon is empty; tray will not be created.");
+    logMain("[tray] icon is empty; tray will not be created");
     return null;
   }
 
   tray = new Tray(icon);
+  logMain("[tray] created");
   tray.setToolTip(tMain("tray.tooltip"));
 
   if (process.platform === "win32") {
@@ -134,11 +136,13 @@ function loadTrayIcon(): Electron.NativeImage {
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
       const image = nativeImage.createFromBuffer(fs.readFileSync(candidate));
+      logMain(`[tray] loaded icon ${candidate} empty=${image.isEmpty()}`);
       if (process.platform === "darwin") image.setTemplateImage(true);
       return image;
     }
   }
 
+  logMain("[tray] using fallback icon");
   const fallback = nativeImage.createFromDataURL(
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAFElEQVR42mP8z8Dwn4GKgImaho0aAQB6uwIoMsPZ7AAAAABJRU5ErkJggg=="
   );

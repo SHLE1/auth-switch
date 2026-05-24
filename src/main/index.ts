@@ -5,6 +5,15 @@ import { initDatabase } from "./db/database";
 import { buildAppMenu } from "./menu";
 import { createTray } from "./tray";
 import { configureAutoUpdates, scheduleAutomaticUpdateCheck } from "./updater";
+import { getMainLogPath, logMain } from "./logger";
+
+process.on("uncaughtException", (error) => {
+  logMain("[main] uncaughtException", error);
+});
+
+process.on("unhandledRejection", (reason) => {
+  logMain("[main] unhandledRejection", reason);
+});
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -12,6 +21,7 @@ if (!gotSingleInstanceLock) {
   app.quit();
 } else {
   app.on("second-instance", () => {
+    logMain("[main] second-instance");
     if (app.isReady()) {
       showMainWindow();
     } else {
@@ -20,8 +30,11 @@ if (!gotSingleInstanceLock) {
   });
 
   app.whenReady().then(() => {
+    logMain(`[main] ready version=${app.getVersion()} log=${getMainLogPath()}`);
     nativeTheme.themeSource = "dark";
+    logMain("[main] init database");
     initDatabase();
+    logMain("[main] register ipc/menu/tray");
     registerIpc();
     buildAppMenu();
     createTray();

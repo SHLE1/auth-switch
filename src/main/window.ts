@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { is } from "@electron-toolkit/utils";
 import { getWindowBoundsSetting, setWindowBoundsSetting, type WindowBoundsSetting } from "./db/settings";
+import { logMain } from "./logger";
 
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
@@ -48,11 +49,38 @@ export function createMainWindow(): BrowserWindow {
     }
   });
 
+  logMain(`[window] created ${savedBounds.width}x${savedBounds.height}`);
+
   hardenWindowNavigation(mainWindow);
 
   mainWindow.on("ready-to-show", () => {
+    logMain("[window] ready-to-show");
     mainWindow?.show();
+    mainWindow?.focus();
   });
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    logMain("[window] did-finish-load");
+    showWindowIfHidden("did-finish-load");
+  });
+
+  mainWindow.webContents.on("did-fail-load", (_event, errorCode, errorDescription, validatedURL) => {
+    logMain(`[window] did-fail-load ${errorCode} ${errorDescription} ${validatedURL}`);
+    showWindowIfHidden("did-fail-load");
+  });
+
+  mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    logMain(`[window] render-process-gone ${details.reason} exitCode=${details.exitCode}`);
+    showWindowIfHidden("render-process-gone");
+  });
+
+  mainWindow.webContents.on("unresponsive", () => {
+    logMain("[window] renderer unresponsive");
+  });
+
+  setTimeout(() => {
+    showWindowIfHidden("startup-timeout");
+  }, 2_000);
 
   mainWindow.on("close", (event) => {
     saveMainWindowBounds();
@@ -76,12 +104,28 @@ export function createMainWindow(): BrowserWindow {
   }
 
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {
-    void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+    void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL).catch((error) => {
+      logMain("[window] loadURL failed", error);
+      showWindowIfHidden("loadURL failed");
+    });
   } else {
-    void mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    const rendererPath = join(__dirname, "../renderer/index.html");
+    logMain(`[window] loading ${rendererPath}`);
+    void mainWindow.loadFile(rendererPath).catch((error) => {
+      logMain("[window] loadFile failed", error);
+      showWindowIfHidden("loadFile failed");
+    });
   }
 
   return mainWindow;
+}
+
+function showWindowIfHidden(reason: string): void {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isVisible()) return;
+  logMain(`[window] showing hidden window: ${reason}`);
+  if (process.platform === "darwin") app.dock?.show();
+  mainWindow.show();
+  mainWindow.focus();
 }
 
 export function showMainWindow(): void {
