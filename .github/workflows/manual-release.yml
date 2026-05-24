@@ -291,16 +291,26 @@ jobs:
             -e '/^\*\*Full Changelog\*\*: /d' \
             "$RUNNER_TEMP/generated-release-notes-body.md" > "$CLEAN_GENERATED_FILE"
 
-          {
-            printf '%s\n' "## What's Changed"
-            if grep -Eq '^- |^## ' "$CLEAN_GENERATED_FILE"; then
-              cat "$CLEAN_GENERATED_FILE"
-            elif [ -s "$RUNNER_TEMP/generated-commit-summary.md" ]; then
-              cat "$RUNNER_TEMP/generated-commit-summary.md"
+          if [ -s "$CLEAN_GENERATED_FILE" ]; then
+            if grep -Eq '^## What's Changed' "$CLEAN_GENERATED_FILE"; then
+              cat "$CLEAN_GENERATED_FILE" > "$RUNNER_TEMP/release-notes.md"
             else
-              printf '%s\n' "- Maintenance release."
+              {
+                printf '%s\n\n' "## What's Changed"
+                cat "$CLEAN_GENERATED_FILE"
+              } > "$RUNNER_TEMP/release-notes.md"
             fi
-          } > "$RUNNER_TEMP/release-notes.md"
+          elif [ -s "$RUNNER_TEMP/generated-commit-summary.md" ]; then
+            {
+              printf '%s\n\n' "## What's Changed"
+              cat "$RUNNER_TEMP/generated-commit-summary.md"
+            } > "$RUNNER_TEMP/release-notes.md"
+          else
+            {
+              printf '%s\n\n' "## What's Changed"
+              printf '%s\n' "- Maintenance release."
+            } > "$RUNNER_TEMP/release-notes.md"
+          fi
 
           {
             printf '\n%s\n' '## Artifacts'
@@ -318,7 +328,11 @@ jobs:
             printf '%s\n' '- `appcast.xml` is published as Sparkle-compatible release metadata.'
             printf '\n%s\n' '## Notice'
             printf '%s\n' 'These artifacts are currently unsigned and not notarized. macOS users may need right-click/Open or Privacy & Security approval.'
-            printf '\n%s\n' "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${VERSION_TAG}"
+            if [ "$PREVIOUS_TAG" != "$VERSION_TAG" ] && git rev-parse -q --verify "refs/tags/${PREVIOUS_TAG}" >/dev/null 2>&1; then
+              printf '\n%s\n' "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${VERSION_TAG}"
+            else
+              printf '\n%s\n' "**Initial release**: ${VERSION_TAG}"
+            fi
           } >> "$RUNNER_TEMP/release-notes.md"
 
           ruby -rcgi -e '
