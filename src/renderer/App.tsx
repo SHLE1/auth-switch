@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
-import { AlertTriangle, LockKeyhole } from "lucide-react";
+import { AlertTriangle, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { setLanguage } from "./i18n/index";
 import { useAccounts } from "./hooks/useAccounts";
+import { useTheme } from "./hooks/useTheme";
 import type { Account, CodexApiProfileInput, ImportResult } from "./types";
 import { AccountList } from "./components/AccountList";
 import { ApiProfileDialog } from "./components/ApiProfileDialog";
@@ -10,10 +11,14 @@ import { CurrentAccountCard } from "./components/CurrentAccountCard";
 import { FirstRunDialog } from "./components/FirstRunDialog";
 import { ImportButton } from "./components/ImportButton";
 import { RenameDialog } from "./components/RenameDialog";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export default function App(): JSX.Element {
   const { t, i18n } = useTranslation();
   const { accounts, current, loading, error, setError, refresh } = useAccounts();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [firstRunVisible, setFirstRunVisible] = useState(false);
   const [apiProfileVisible, setApiProfileVisible] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Account | null>(null);
@@ -85,7 +90,11 @@ export default function App(): JSX.Element {
   async function requestDelete(account: Account): Promise<void> {
     if (account.is_current) {
       try {
-        await window.authSwitch.nativeMessage(t("deleteDialog.title"), t("deleteDialog.isCurrent"), t("common.ok"));
+        await window.authSwitch.nativeMessage(
+          t("deleteDialog.title"),
+          t("deleteDialog.isCurrent"),
+          t("common.ok")
+        );
       } catch (err) {
         showError(err instanceof Error ? err.message : String(err));
       }
@@ -123,7 +132,11 @@ export default function App(): JSX.Element {
   function handleImported(result: ImportResult): void {
     const duplicateNote = result.duplicate ? t("notice.duplicateIgnored") : "";
     const sameEmailNote = result.sameEmailExists ? t("notice.sameEmailExists") : "";
-    showNotice(t("notice.imported", { name: result.account?.name ?? "auth.json" }) + duplicateNote + sameEmailNote);
+    showNotice(
+      t("notice.imported", { name: result.account?.name ?? "auth.json" }) +
+        duplicateNote +
+        sameEmailNote
+    );
     void refresh();
   }
 
@@ -133,80 +146,99 @@ export default function App(): JSX.Element {
   const isMac = /Macintosh/.test(navigator.userAgent);
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-transparent text-console-text">
-      {/* macOS traffic-light spacer — gives the inset traffic lights unobstructed space */}
-      {isMac && (
-        <div style={dragRegionStyle} className="h-8 w-full shrink-0" />
-      )}
-      {/* ── Fixed header ── */}
+    <main className="flex h-screen flex-col overflow-hidden">
+      {/* macOS traffic-light spacer */}
+      {isMac && <div style={dragRegionStyle} className="h-8 w-full shrink-0" />}
+
+      {/* ── Header ── */}
       <header
         style={dragRegionStyle}
-        className="flex shrink-0 items-center justify-between border-b border-console-line bg-[rgba(8,11,15,0.85)] px-5 py-4"
+        className="flex shrink-0 items-center justify-between border-b bg-background px-5 py-3"
       >
         <div>
-          <p className="mono-label text-[11px] text-console-green">{t("app.localOnly")}</p>
-          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight">auth-switch</h1>
+          <h1 className="text-sm font-semibold tracking-tight">auth-switch</h1>
+          <p className="mono-label text-[10px] text-muted-foreground">{t("app.localOnly")}</p>
         </div>
-        <div style={noDragRegionStyle} className="flex items-center gap-3">
+
+        <div style={noDragRegionStyle} className="flex items-center gap-1.5">
           {/* Language toggle */}
-          <div className="flex rounded-lg border border-console-line overflow-hidden font-mono text-xs">
-            <button
+          <div className="flex rounded-md border overflow-hidden">
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setLanguage("en")}
-              className={`px-2.5 py-1.5 transition ${
+              className={cn(
+                "h-7 rounded-none px-2.5 font-mono text-xs",
                 currentLang === "en"
-                  ? "bg-console-green/20 text-console-green"
-                  : "text-console-muted hover:text-console-text"
-              }`}
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground"
+              )}
             >
               EN
-            </button>
-            <button
+            </Button>
+            <Separator orientation="vertical" className="h-7" />
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setLanguage("zh")}
-              className={`px-2.5 py-1.5 border-l border-console-line transition ${
+              className={cn(
+                "h-7 rounded-none px-2.5 font-mono text-xs",
                 currentLang === "zh"
-                  ? "bg-console-green/20 text-console-green"
-                  : "text-console-muted hover:text-console-text"
-              }`}
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground"
+              )}
             >
               中文
-            </button>
+            </Button>
           </div>
-          <div className="rounded-xl border border-console-line bg-console-panel p-2 text-console-green">
-            <LockKeyhole size={20} />
-          </div>
+
+          {/* Theme toggle */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="size-7"
+          >
+            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+          </Button>
         </div>
       </header>
 
-      {/* ── Scrollable body — grows to fill remaining height ── */}
-      <div className="min-h-0 flex-1 overflow-y-auto bg-[rgba(8,11,15,0.82)] px-5 py-4">
+      {/* ── Scrollable body ── */}
+      <div className="min-h-0 flex-1 overflow-y-auto bg-background px-5 py-4">
         <CurrentAccountCard account={current} />
 
+        {/* Notice / Error banner */}
         {(error ?? notice) && (
           <div
-            className={`mt-3 flex gap-2 rounded-xl border p-3 text-sm ${
+            className={cn(
+              "mt-3 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm",
               error
-                ? "border-console-red/40 bg-console-red/10 text-console-red"
-                : "border-console-green/40 bg-console-green/10 text-console-green"
-            }`}
+                ? "border-destructive/40 bg-destructive/10 text-destructive"
+                : "border-border bg-muted text-muted-foreground"
+            )}
           >
-            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            {error && <AlertTriangle size={15} className="mt-0.5 shrink-0" />}
             <p className="leading-5">{error ?? notice}</p>
           </div>
         )}
 
+        {/* Accounts section */}
         <section className="mt-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="mono-label text-xs text-console-muted">{t("app.accounts")}</h2>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
+            <h2 className="mono-label text-[11px] text-muted-foreground">{t("app.accounts")}</h2>
+            <div style={noDragRegionStyle} className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setApiProfileVisible(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-console-line bg-console-panel px-3 py-2 font-mono text-sm text-console-text transition hover:border-console-green/60 hover:text-console-green"
+                className="font-mono text-xs"
               >
                 {t("app.addApi")}
-              </button>
+              </Button>
               <ImportButton onImported={handleImported} onError={showError} />
             </div>
           </div>
@@ -220,12 +252,13 @@ export default function App(): JSX.Element {
         </section>
       </div>
 
-      {/* ── Fixed footer ── */}
-      <footer className="shrink-0 border-t border-console-line bg-[rgba(8,11,15,0.85)] px-5 py-3 text-xs leading-5 text-console-muted">
+      {/* ── Footer ── */}
+      <footer className="shrink-0 border-t bg-background px-5 py-2.5 text-xs leading-5 text-muted-foreground">
         <p>{t("app.footer.local")}</p>
         <p className="font-mono">{t("app.footer.db")}</p>
       </footer>
 
+      {/* Overlays */}
       {firstRunVisible && (
         <FirstRunDialog
           onDone={() => {
@@ -237,7 +270,10 @@ export default function App(): JSX.Element {
       )}
 
       {apiProfileVisible && (
-        <ApiProfileDialog onCancel={() => setApiProfileVisible(false)} onSave={(input) => void handleCreateApiProfile(input)} />
+        <ApiProfileDialog
+          onCancel={() => setApiProfileVisible(false)}
+          onSave={(input) => void handleCreateApiProfile(input)}
+        />
       )}
 
       {renameTarget && (
@@ -247,7 +283,6 @@ export default function App(): JSX.Element {
           onSave={(name) => void handleRename(name)}
         />
       )}
-
     </main>
   );
 }

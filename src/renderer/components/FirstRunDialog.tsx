@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { LiveAuthStatus } from "../types";
 
 interface FirstRunDialogProps {
@@ -13,7 +23,6 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
   const [status, setStatus] = useState<LiveAuthStatus | null>(null);
   const [name, setName] = useState(t("firstRun.unnamedAccount"));
   const [busy, setBusy] = useState(false);
-  const containerRef = useFocusTrap<HTMLDivElement>(true);
 
   useEffect(() => {
     window.authSwitch
@@ -24,17 +33,6 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
       })
       .catch((error) => onError(error instanceof Error ? error.message : String(error)));
   }, [onError, t]);
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape" && !busy) {
-        void dismiss();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [busy]);
 
   async function dismiss(): Promise<void> {
     try {
@@ -62,80 +60,68 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
   }
 
   return (
-    <div
-      ref={containerRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="first-run-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-5"
-    >
-      <section className="w-full max-w-md rounded-2xl border border-console-line bg-console-panel p-6 shadow-2xl">
-        <p className="mono-label text-[11px] text-console-green">{t("firstRun.label")}</p>
-        <h2 id="first-run-dialog-title" className="mt-3 text-xl font-semibold text-console-text">
-          {t("firstRun.title")}
-        </h2>
+    <Dialog open>
+      {/* Prevent accidental close during first-run flow */}
+      <DialogContent
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <DialogHeader>
+          <p className="mono-label text-[11px] text-muted-foreground">{t("firstRun.label")}</p>
+          <DialogTitle className="mt-1">{t("firstRun.title")}</DialogTitle>
+        </DialogHeader>
 
         {!status ? (
-          <p data-autofocus tabIndex={-1} className="mt-4 font-mono text-sm text-console-muted">
-            {t("firstRun.checking")}
-          </p>
+          <p className="font-mono text-sm text-muted-foreground">{t("firstRun.checking")}</p>
         ) : status.exists ? (
           <>
-            <p className="mt-4 text-sm leading-6 text-console-muted">
-              {t("firstRun.detectedPrefix")} <span className="font-mono text-console-text">~/.codex/auth.json</span>
-              {status.email ? (
+            <DialogDescription className="text-sm leading-6">
+              {t("firstRun.detectedPrefix")}{" "}
+              <code className="font-mono text-foreground">~/.codex/auth.json</code>
+              {status.email && (
                 <>
                   {" "}
-                  {t("firstRun.detectedFor")} <span className="font-mono text-console-green">{status.email}</span>
+                  {t("firstRun.detectedFor")}{" "}
+                  <span className="font-mono font-medium text-foreground">{status.email}</span>
                 </>
-              ) : null}
+              )}
               {t("firstRun.detectedSuffix")}
-            </p>
-            <label className="mt-4 block">
-              <span className="mono-label text-[11px] text-console-muted">{t("common.name")}</span>
-              <input
-                data-autofocus
+            </DialogDescription>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="mono-label text-[11px] text-muted-foreground">
+                {t("common.name")}
+              </Label>
+              <Input
+                autoFocus
                 value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
+                onChange={(e) => setName(e.target.value)}
               />
-            </label>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void dismiss()}
-                className="rounded-lg border border-console-line px-3 py-2 font-mono text-sm text-console-muted hover:text-console-text"
-              >
-                {t("common.skip")}
-              </button>
-              <button
-                type="button"
-                data-autofocus={!status.email ? true : undefined}
-                disabled={busy || !name.trim()}
-                onClick={() => void handleImport()}
-                className="rounded-lg border border-console-green/60 bg-console-green/10 px-3 py-2 font-mono text-sm text-console-green hover:bg-console-green/20"
-              >
-                {t("common.import")}
-              </button>
             </div>
+
+            <DialogFooter>
+              <Button variant="ghost" disabled={busy} onClick={() => void dismiss()}>
+                {t("common.skip")}
+              </Button>
+              <Button disabled={busy || !name.trim()} onClick={() => void handleImport()}>
+                {t("common.import")}
+              </Button>
+            </DialogFooter>
           </>
         ) : (
           <>
-            <p className="mt-4 text-sm leading-6 text-console-muted">{t("firstRun.noFile")}</p>
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                data-autofocus
-                onClick={() => void dismiss()}
-                className="rounded-lg border border-console-green/60 bg-console-green/10 px-3 py-2 font-mono text-sm text-console-green hover:bg-console-green/20"
-              >
+            <DialogDescription className="text-sm leading-6">
+              {t("firstRun.noFile")}
+            </DialogDescription>
+            <DialogFooter>
+              <Button autoFocus onClick={() => void dismiss()}>
                 {t("common.ok")}
-              </button>
-            </div>
+              </Button>
+            </DialogFooter>
           </>
         )}
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

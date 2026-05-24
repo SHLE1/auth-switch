@@ -1,6 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import type { CodexApiProfileInput } from "../types";
 
 interface ApiProfileDialogProps {
@@ -13,7 +31,7 @@ const presets = [
   { name: "AiHubMix", baseUrl: "https://aihubmix.com/v1" },
   { name: "PatewayAI", baseUrl: "https://api.pateway.ai/v1" },
   { name: "DMXAPI", baseUrl: "https://www.dmxapi.cn/v1" },
-  { name: "Azure OpenAI", baseUrl: "https://YOUR_RESOURCE_NAME.openai.azure.com/openai" }
+  { name: "Azure OpenAI", baseUrl: "https://YOUR_RESOURCE_NAME.openai.azure.com/openai" },
 ];
 
 export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): JSX.Element {
@@ -21,125 +39,111 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
   const [name, setName] = useState("Custom API");
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
-  const containerRef = useFocusTrap<HTMLDivElement>(true);
 
-  const canSave = name.trim().length > 0 && apiKey.trim().length > 0 && baseUrl.trim().length > 0;
+  const canSave =
+    name.trim().length > 0 && apiKey.trim().length > 0 && baseUrl.trim().length > 0;
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") onCancel();
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onCancel]);
-
-  function applyPreset(index: number): void {
-    const preset = presets[index];
+  function applyPreset(value: string): void {
+    const preset = presets.find((p) => p.name === value);
     if (!preset) return;
     setName(preset.name === "Custom" ? "Custom API" : preset.name);
     setBaseUrl(preset.baseUrl);
   }
 
   return (
-    <div
-      ref={containerRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="api-profile-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5"
-    >
-      <form
-        className="w-full max-w-lg rounded-2xl border border-console-line bg-console-panel p-5 shadow-2xl"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (canSave) {
-            onSave({ name: name.trim(), apiKey: apiKey.trim(), baseUrl: baseUrl.trim() });
-          }
-        }}
-      >
-        <h2 id="api-profile-dialog-title" className="text-lg font-semibold text-console-text">
-          {t("apiProfile.title")}
-        </h2>
-        <p className="mt-2 text-sm leading-5 text-console-muted">
-          {t("apiProfile.desc").split("openai_base_url").map((part, i, arr) =>
-            i < arr.length - 1 ? (
-              <span key={i}>
-                {part}
-                <span className="font-mono">openai_base_url</span>
-              </span>
-            ) : (
-              <span key={i}>{part}</span>
-            )
-          )}
-        </p>
+    <Dialog open onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("apiProfile.title")}</DialogTitle>
+          <DialogDescription className="text-xs leading-5">
+            {t("apiProfile.desc")}
+          </DialogDescription>
+        </DialogHeader>
 
-        <label className="mt-4 block">
-          <span className="mono-label text-[11px] text-console-muted">{t("apiProfile.preset")}</span>
-          <select
-            onChange={(event) => applyPreset(Number(event.target.value))}
-            className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
-            defaultValue="0"
-          >
-            {presets.map((preset, index) => (
-              <option key={preset.name} value={index}>
-                {preset.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (canSave) {
+              onSave({ name: name.trim(), apiKey: apiKey.trim(), baseUrl: baseUrl.trim() });
+            }
+          }}
+        >
+          <div className="flex flex-col gap-4 py-2">
+            {/* Preset picker */}
+            <div className="flex flex-col gap-1.5">
+              <Label className="mono-label text-[11px] text-muted-foreground">
+                {t("apiProfile.preset")}
+              </Label>
+              <Select onValueChange={applyPreset} defaultValue="Custom">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {presets.map((p) => (
+                    <SelectItem key={p.name} value={p.name}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <label className="mt-4 block">
-          <span className="mono-label text-[11px] text-console-muted">{t("common.name")}</span>
-          <input
-            data-autofocus
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
-            placeholder={t("apiProfile.namePlaceholder")}
-          />
-        </label>
+            <Separator />
 
-        <label className="mt-4 block">
-          <span className="mono-label text-[11px] text-console-muted">{t("apiProfile.baseUrl")}</span>
-          <input
-            value={baseUrl}
-            onChange={(event) => setBaseUrl(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
-            placeholder={t("apiProfile.urlPlaceholder")}
-          />
-        </label>
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="api-name" className="mono-label text-[11px] text-muted-foreground">
+                {t("common.name")}
+              </Label>
+              <Input
+                id="api-name"
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t("apiProfile.namePlaceholder")}
+              />
+            </div>
 
-        <label className="mt-4 block">
-          <span className="mono-label text-[11px] text-console-muted">{t("apiProfile.apiKey")}</span>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(event) => setApiKey(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-console-line bg-[#080b0f] px-3 py-2 text-sm text-console-text outline-none ring-console-green/30 focus:border-console-green/70 focus:ring-2"
-            placeholder={t("apiProfile.keyPlaceholder")}
-          />
-        </label>
+            {/* Base URL */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="api-url" className="mono-label text-[11px] text-muted-foreground">
+                {t("apiProfile.baseUrl")}
+              </Label>
+              <Input
+                id="api-url"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder={t("apiProfile.urlPlaceholder")}
+              />
+            </div>
 
-        <p className="mt-3 text-xs leading-5 text-console-muted">{t("apiProfile.noShellReload")}</p>
+            {/* API Key */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="api-key" className="mono-label text-[11px] text-muted-foreground">
+                {t("apiProfile.apiKey")}
+              </Label>
+              <Input
+                id="api-key"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={t("apiProfile.keyPlaceholder")}
+              />
+            </div>
 
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-console-line px-3 py-2 font-mono text-sm text-console-muted hover:text-console-text"
-          >
-            {t("common.cancel")}
-          </button>
-          <button
-            type="submit"
-            disabled={!canSave}
-            className="rounded-lg border border-console-green/60 bg-console-green/10 px-3 py-2 font-mono text-sm text-console-green hover:bg-console-green/20"
-          >
-            {t("apiProfile.saveProfile")}
-          </button>
-        </div>
-      </form>
-    </div>
+            <p className="text-xs text-muted-foreground">{t("apiProfile.noShellReload")}</p>
+          </div>
+
+          <DialogFooter className="mt-2">
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit" disabled={!canSave}>
+              {t("apiProfile.saveProfile")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,5 +1,6 @@
 import { ShieldCheck, Terminal } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Account } from "../types";
 
 interface CurrentAccountCardProps {
@@ -10,31 +11,39 @@ export function CurrentAccountCard({ account }: CurrentAccountCardProps): JSX.El
   const { t } = useTranslation();
 
   return (
-    <section className="rounded-xl border border-console-line bg-[#0d1219]/90 p-4">
-      <div className="mb-3 flex items-center gap-2 text-console-green">
-        <ShieldCheck size={16} />
-        <span className="mono-label text-[11px]">{t("currentAccount.label")}</span>
-      </div>
+    <Card>
+      <CardContent className="px-4 py-3">
+        <div className="mb-2.5 flex items-center gap-1.5 text-muted-foreground">
+          <ShieldCheck size={13} />
+          <span className="mono-label text-[11px]">{t("currentAccount.label")}</span>
+        </div>
 
-      {account ? (
-        <div>
-          <h2 className="truncate text-lg font-semibold text-console-text">{account.name}</h2>
-          <p className="mt-1 truncate font-mono text-sm text-console-muted">
-            {account.kind === "api_key"
-              ? account.base_url ?? t("currentAccount.apiProfile")
-              : account.email ?? t("currentAccount.emailUnavailable")}
-          </p>
-          <p className="mt-3 flex items-center gap-2 font-mono text-xs text-console-green">
-            <Terminal size={14} />{" "}
-            {account.kind === "api_key" ? t("currentAccount.activeApiKey") : t("currentAccount.activeAuth")}
-          </p>
-        </div>
-      ) : (
-        <div>
-          <h2 className="text-lg font-semibold text-console-text">{t("currentAccount.noAccount")}</h2>
-          <p className="mt-1 text-sm leading-5 text-console-muted">{t("currentAccount.noAccountDesc")}</p>
-        </div>
-      )}
-    </section>
+        {account ? (
+          <div>
+            <p className="truncate text-base font-semibold">{account.name}</p>
+            <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+              {account.kind === "api_key"
+                ? account.base_url ?? t("currentAccount.apiProfile")
+                : account.email ?? t("currentAccount.emailUnavailable")}
+            </p>
+            <div className="mt-2.5 flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+              <Terminal size={12} />
+              <span>
+                {account.kind === "api_key"
+                  ? t("currentAccount.activeApiKey")
+                  : t("currentAccount.activeAuth")}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p className="text-base font-semibold">{t("currentAccount.noAccount")}</p>
+            <p className="mt-1 text-sm leading-5 text-muted-foreground">
+              {t("currentAccount.noAccountDesc")}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
