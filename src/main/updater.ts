@@ -1,6 +1,8 @@
 import { app, dialog } from "electron";
-import { autoUpdater } from "electron-updater";
+import updaterPkg from "electron-updater";
 import { tMain } from "./i18n";
+
+const { autoUpdater } = updaterPkg;
 
 let configured = false;
 let checking = false;
