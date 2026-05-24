@@ -1,5 +1,6 @@
 appId: com.authswitch.app
 productName: auth-switch
+artifactName: ${productName}-${version}-${arch}.${ext}
 files:
   - out/**
   - assets/**
@@ -9,11 +10,19 @@ directories:
 npmRebuild: true
 asarUnpack:
   - node_modules/better-sqlite3/**/*
+publish:
+  provider: github
+  owner: SHLE1
+  repo: auth-switch
+  releaseType: release
 mac:
   target:
     - dmg
+    - zip
   category: public.app-category.utilities
   icon: assets/icon.png
+  hardenedRuntime: true
+  gatekeeperAssess: false
 win:
   target:
     - nsis

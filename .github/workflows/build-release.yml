@@ -1,0 +1,78 @@
+name: Build Unsigned Artifacts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    name: Build macOS unsigned artifacts
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build macOS artifacts
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: pnpm run build && pnpm exec electron-builder --mac --x64 --arm64 --publish never
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-switch-macos-unsigned-${{ github.run_number }}
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/latest-mac.yml
+            release/*.blockmap
+
+  build-windows:
+    name: Build Windows unsigned artifacts
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Windows artifacts
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: pnpm run build && pnpm exec electron-builder --win --x64 --publish never
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-switch-windows-unsigned-${{ github.run_number }}
+          path: |
+            release/*.exe
+            release/latest.yml
+            release/*.blockmap

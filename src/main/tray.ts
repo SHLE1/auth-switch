@@ -5,6 +5,7 @@ import { importAuthFileFromPath, listAccounts, switchAccount } from "./services/
 import { broadcastAccountsChanged, getMainWindow, setQuitting, showMainWindow } from "./window";
 import { notify } from "./notifications";
 import { tMain } from "./i18n";
+import { checkForUpdates } from "./updater";
 
 let tray: Tray | null = null;
 
@@ -100,6 +101,12 @@ export function rebuildTrayMenu(): void {
     },
     { type: "separator" },
     { label: tMain("tray.openWindow"), accelerator: process.platform === "darwin" ? "Command+," : undefined, click: () => showMainWindow() },
+    {
+      label: tMain("updater.checkForUpdates"),
+      click: () => {
+        void checkForUpdates({ showNoUpdateDialog: true });
+      }
+    },
     { type: "separator" },
     {
       label: tMain("tray.quit"),

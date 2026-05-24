@@ -90,6 +90,14 @@
 - After building a DMG, report the path, size, and SHA256. Current release path convention: `release/auth-switch-0.1.0-arm64.dmg`.
 - macOS builds are currently unsigned; mention that users may need right-click/Open or allow the app in Privacy & Security.
 
+### README maintenance rule
+**Every time a new feature is added, changed, or removed, both `README.md` (English) and `README.zh.md` (Simplified Chinese) must be updated in the same commit.**
+
+- `README.md` is the canonical English README. `README.zh.md` is the Simplified Chinese version.
+- Both files must stay in sync — every section, feature bullet, usage step, and table must reflect the current state of the app.
+- Add new features as bullets under the **Features** section and add corresponding usage steps under **Usage** if the feature affects user workflow.
+- Do not leave one language file ahead of the other.
+
 ## Pi conversation summary / recent decisions
 
 - Added API profile support on branch `feat/support-api`.

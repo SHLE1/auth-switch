@@ -6,6 +6,7 @@ import { getBooleanSetting } from "./db/settings";
 import { listAccounts } from "./services/accountsService";
 import { buildAppMenu } from "./menu";
 import { createTray } from "./tray";
+import { configureAutoUpdates, scheduleAutomaticUpdateCheck } from "./updater";
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -26,6 +27,8 @@ if (!gotSingleInstanceLock) {
     registerIpc();
     buildAppMenu();
     createTray();
+    configureAutoUpdates();
+    scheduleAutomaticUpdateCheck();
 
     // Windows: app menu is null so no accelerators work. Register global shortcuts
     // to give users keyboard access to primary tray actions.

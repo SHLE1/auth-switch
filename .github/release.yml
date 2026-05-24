@@ -1,0 +1,34 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+      - internal
+      - dependencies
+  categories:
+    - title: Features
+      labels:
+        - feature
+        - enhancement
+        - feat
+    - title: Fixes
+      labels:
+        - fix
+        - bug
+        - bugfix
+    - title: UI & UX
+      labels:
+        - ui
+        - ux
+    - title: Documentation
+      labels:
+        - documentation
+        - docs
+    - title: Maintenance
+      labels:
+        - chore
+        - refactor
+        - ci
+        - release
+    - title: Other Changes
+      labels:
+        - '*'

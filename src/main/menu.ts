@@ -1,4 +1,6 @@
 import { Menu, app, type MenuItemConstructorOptions } from "electron";
+import { tMain } from "./i18n";
+import { checkForUpdates } from "./updater";
 import { hideMainWindow, setQuitting, showMainWindow } from "./window";
 
 export function buildAppMenu(): void {
@@ -12,6 +14,13 @@ export function buildAppMenu(): void {
       label: app.name,
       submenu: [
         { role: "about" },
+        { type: "separator" },
+        {
+          label: tMain("updater.checkForUpdates"),
+          click: () => {
+            void checkForUpdates({ showNoUpdateDialog: true });
+          }
+        },
         { type: "separator" },
         {
           label: "Preferences…",
