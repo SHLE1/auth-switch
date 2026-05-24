@@ -127,7 +127,10 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Rebuild package install scripts
+        run: pnpm rebuild electron esbuild better-sqlite3
 
       - name: Build macOS artifacts
         env:
@@ -184,7 +187,10 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Rebuild package install scripts
+        run: pnpm rebuild electron esbuild better-sqlite3
 
       - name: Build Windows artifacts
         env:
