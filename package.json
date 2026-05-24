@@ -1,6 +1,6 @@
 {
   "name": "auth-switch",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Local desktop app for switching OpenAI Codex auth.json accounts.",
   "main": "./out/main/index.js",
   "author": "SHLE1",
