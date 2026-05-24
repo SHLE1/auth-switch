@@ -85,8 +85,8 @@
   body {
     @apply bg-background text-foreground font-sans;
     margin: 0;
-    min-width: 480px;
-    min-height: 520px;
+    
+    
     overflow: hidden;
   }
 
