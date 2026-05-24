@@ -1,87 +1,119 @@
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Account } from "../types";
 
 interface AccountRowProps {
   account: Account;
+  switchingId: string | null;
   onSwitch: (account: Account) => void;
   onRename: (account: Account) => void;
   onDelete: (account: Account) => void;
 }
 
-export function AccountRow({ account, onSwitch, onRename, onDelete }: AccountRowProps): JSX.Element {
+export function AccountRow({
+  account,
+  switchingId,
+  onSwitch,
+  onRename,
+  onDelete,
+}: AccountRowProps): JSX.Element {
   const { t } = useTranslation();
+  const isSwitching = switchingId === account.id;
 
   return (
-    <li className="rounded-lg border bg-card px-4 py-3">
-      <div className="flex items-start gap-3">
-        {/* Active indicator */}
-        <div
-          className={cn(
-            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-            account.is_current ? "border-foreground text-foreground" : "border-border"
-          )}
-        >
-          {account.is_current && <Check size={12} strokeWidth={2.5} />}
-        </div>
+    <li className="flex items-center gap-3 px-3 py-2.5">
+      {/* Active indicator dot */}
+      <span
+        className={cn(
+          "size-3.5 shrink-0 rounded-full border transition-colors duration-150",
+          account.is_current
+            ? "border-foreground bg-foreground animate-dot-fill"
+            : "border-border bg-transparent"
+        )}
+      />
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{account.name}</p>
-              <p className="truncate font-mono text-xs text-muted-foreground">
-                {account.kind === "api_key"
-                  ? account.base_url ?? t("currentAccount.apiProfile")
-                  : account.email ?? t("currentAccount.emailUnavailable")}
-              </p>
-            </div>
+      {/* Main content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium leading-snug">{account.name}</p>
+            <p className="truncate font-mono text-xs text-muted-foreground">
+              {account.kind === "api_key"
+                ? account.base_url ?? t("currentAccount.apiProfile")
+                : account.email ?? t("currentAccount.emailUnavailable")}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground">
+              {account.kind === "api_key" ? t("accountRow.apiEnv") : "auth.json"}
+            </Badge>
 
             {account.is_current ? (
-              <Badge
-                variant="outline"
-                className="shrink-0 font-mono text-[11px]"
-              >
+              <Badge variant="secondary" className="font-mono text-[10px]">
                 {t("accountRow.current")}
               </Badge>
             ) : (
               <Button
                 variant="outline"
                 size="sm"
+                disabled={isSwitching || !!switchingId}
                 onClick={() => onSwitch(account)}
-                className="shrink-0 font-mono text-xs"
+                className={cn(
+                  "h-7 px-2.5 font-mono text-xs",
+                  "active:scale-[0.97] transition-transform duration-100"
+                )}
               >
-                {t("accountRow.switch")}
+                {isSwitching ? (
+                  <>
+                    <Loader2 size={11} className="animate-spin" />
+                    {t("accountRow.switching")}
+                  </>
+                ) : (
+                  t("accountRow.switch")
+                )}
               </Button>
             )}
-          </div>
 
-          <div className="mt-2 flex items-center gap-1">
-            <Badge variant="secondary" className="font-mono text-[11px] text-muted-foreground">
-              {account.kind === "api_key" ? t("accountRow.apiEnv") : "auth.json"}
-            </Badge>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onRename(account)}
-              className="h-6 gap-1 px-2 font-mono text-xs text-muted-foreground"
-            >
-              <Pencil size={11} />
-              {t("accountRow.rename")}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(account)}
-              className="h-6 gap-1 px-2 font-mono text-xs text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 size={11} />
-              {t("accountRow.delete")}
-            </Button>
+            {/* ··· dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-muted-foreground"
+                >
+                  <MoreHorizontal size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuItem
+                  onClick={() => onRename(account)}
+                  className="gap-2 font-mono text-xs"
+                >
+                  <Pencil size={12} />
+                  {t("accountRow.rename")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(account)}
+                  className="gap-2 font-mono text-xs text-destructive focus:text-destructive"
+                >
+                  <Trash2 size={12} />
+                  {t("accountRow.delete")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

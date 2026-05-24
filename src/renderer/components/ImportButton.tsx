@@ -32,8 +32,13 @@ export function ImportButton({ onImported, onError }: ImportButtonProps): JSX.El
   }
 
   return (
-    <Button size="sm" disabled={busy} onClick={() => void handleImport()}>
-      <Plus />
+    <Button
+      size="sm"
+      disabled={busy}
+      onClick={() => void handleImport()}
+      className="h-7 gap-1 px-2.5 font-mono text-xs"
+    >
+      <Plus size={12} />
       {busy ? t("importButton.importing") : t("importButton.addAuth")}
     </Button>
   );

@@ -2,9 +2,8 @@
   "app.localOnly": "仅本地",
   "app.accounts": "账户",
   "app.addApi": "添加 API",
-  "app.footer.local": "数据仅存储在本地。auth.json 包含敏感 token。",
-  "app.footer.db": "数据库：~/.auth-switch/auth-switch.db",
-
+  "app.footer.local": "本地存储",
+  "app.footer.db": "~/.auth-switch/auth-switch.db",
   "notice.alreadyCurrent": "{{name}} 已是当前账户。",
   "notice.switchedTo": "已切换到 {{name}}。",
   "notice.renamed": "账户已重命名为 {{name}}。",
@@ -13,11 +12,9 @@
   "notice.imported": "已导入 {{name}}。",
   "notice.duplicateIgnored": " 重复内容已忽略。",
   "notice.sameEmailExists": " 已存在相同邮箱的账户。",
-
   "error.switchFailed": "切换失败。",
   "error.importFailed": "导入失败。",
   "error.saveApiProfileFailed": "保存 API 配置文件失败。",
-
   "common.cancel": "取消",
   "common.ok": "确定",
   "common.delete": "删除",
@@ -26,7 +23,6 @@
   "common.skip": "跳过",
   "common.confirm": "确认",
   "common.name": "名称",
-
   "firstRun.label": "首次运行",
   "firstRun.title": "欢迎使用 auth-switch",
   "firstRun.checking": "正在检查 ~/.codex/auth.json...",
@@ -35,12 +31,9 @@
   "firstRun.detectedSuffix": "。是否导入为您的第一个账户？",
   "firstRun.unnamedAccount": "未命名账户",
   "firstRun.noFile": "未找到 Codex auth 文件。请先登录 Codex，然后在此处导入 auth.json。",
-
   "accountList.loading": "正在加载账户...",
   "accountList.empty": "尚未导入账户。添加 Codex auth.json 开始使用。",
-
   "rename.title": "重命名账户",
-
   "currentAccount.label": "当前 Codex 账户",
   "currentAccount.apiProfile": "API 配置文件",
   "currentAccount.emailUnavailable": "邮箱不可用",
@@ -48,7 +41,6 @@
   "currentAccount.activeAuth": "已激活 · ~/.codex/auth.json",
   "currentAccount.noAccount": "无当前账户",
   "currentAccount.noAccountDesc": "导入 auth.json，然后切换到它以激活 Codex。",
-
   "apiProfile.title": "添加 Codex API 配置文件",
   "apiProfile.desc": "创建一个 Codex 配置文件，写入 API 密钥 auth.json，并仅管理 config.toml 中的 openai_base_url 行。切换回 auth.json 时该行将被注释。",
   "apiProfile.preset": "预设",
@@ -59,17 +51,15 @@
   "apiProfile.namePlaceholder": "AiHubMix",
   "apiProfile.urlPlaceholder": "https://api.example.com/v1",
   "apiProfile.keyPlaceholder": "sk-...",
-
   "accountRow.current": "当前",
   "accountRow.switch": "切换",
   "accountRow.rename": "重命名",
   "accountRow.delete": "删除",
   "accountRow.apiEnv": "API 配置",
-
   "deleteDialog.title": "删除账户？",
   "deleteDialog.isCurrent": "请先切换到其他账户，再删除此账户。",
   "deleteDialog.confirm": "删除 \"{{name}}\"？此操作不会修改 ~/.codex/auth.json。",
-
   "importButton.importing": "正在导入...",
-  "importButton.addAuth": "添加 auth.json"
+  "importButton.addAuth": "添加 auth.json",
+  "accountRow.switching": "切换中..."
 }

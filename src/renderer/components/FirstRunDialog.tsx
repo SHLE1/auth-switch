@@ -61,61 +61,55 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
 
   return (
     <Dialog open>
-      {/* Prevent accidental close during first-run flow */}
       <DialogContent
-        className="sm:max-w-md"
+        className="sm:max-w-sm gap-3"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <p className="mono-label text-[11px] text-muted-foreground">{t("firstRun.label")}</p>
-          <DialogTitle className="mt-1">{t("firstRun.title")}</DialogTitle>
+        <DialogHeader className="gap-1">
+          <p className="mono-label text-[10px] text-muted-foreground">{t("firstRun.label")}</p>
+          <DialogTitle className="text-sm">{t("firstRun.title")}</DialogTitle>
         </DialogHeader>
 
         {!status ? (
-          <p className="font-mono text-sm text-muted-foreground">{t("firstRun.checking")}</p>
+          <p className="font-mono text-xs text-muted-foreground">{t("firstRun.checking")}</p>
         ) : status.exists ? (
           <>
-            <DialogDescription className="text-sm leading-6">
+            <DialogDescription className="text-xs leading-5">
               {t("firstRun.detectedPrefix")}{" "}
-              <code className="font-mono text-foreground">~/.codex/auth.json</code>
+              <code className="font-mono">~/.codex/auth.json</code>
               {status.email && (
-                <>
-                  {" "}
-                  {t("firstRun.detectedFor")}{" "}
-                  <span className="font-mono font-medium text-foreground">{status.email}</span>
-                </>
+                <> {t("firstRun.detectedFor")} <span className="font-mono font-medium text-foreground">{status.email}</span></>
               )}
               {t("firstRun.detectedSuffix")}
             </DialogDescription>
-
             <div className="flex flex-col gap-1.5">
-              <Label className="mono-label text-[11px] text-muted-foreground">
+              <Label className="mono-label text-[10px] text-muted-foreground">
                 {t("common.name")}
               </Label>
               <Input
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
-
-            <DialogFooter>
-              <Button variant="ghost" disabled={busy} onClick={() => void dismiss()}>
+            <DialogFooter className="gap-1.5">
+              <Button variant="ghost" size="sm" disabled={busy} onClick={() => void dismiss()}>
                 {t("common.skip")}
               </Button>
-              <Button disabled={busy || !name.trim()} onClick={() => void handleImport()}>
+              <Button size="sm" disabled={busy || !name.trim()} onClick={() => void handleImport()}>
                 {t("common.import")}
               </Button>
             </DialogFooter>
           </>
         ) : (
           <>
-            <DialogDescription className="text-sm leading-6">
+            <DialogDescription className="text-xs leading-5">
               {t("firstRun.noFile")}
             </DialogDescription>
             <DialogFooter>
-              <Button autoFocus onClick={() => void dismiss()}>
+              <Button size="sm" autoFocus onClick={() => void dismiss()}>
                 {t("common.ok")}
               </Button>
             </DialogFooter>

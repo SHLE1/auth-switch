@@ -31,10 +31,10 @@ export function RenameDialog({ account, onCancel, onSave }: RenameDialogProps): 
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onCancel(); }}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{t("rename.title")}</DialogTitle>
-          <DialogDescription className="truncate font-mono text-xs">
+      <DialogContent className="sm:max-w-sm gap-3">
+        <DialogHeader className="gap-1">
+          <DialogTitle className="text-sm">{t("rename.title")}</DialogTitle>
+          <DialogDescription className="truncate font-mono text-[11px]">
             {account.email ?? account.id}
           </DialogDescription>
         </DialogHeader>
@@ -45,11 +45,8 @@ export function RenameDialog({ account, onCancel, onSave }: RenameDialogProps): 
             if (canSave) onSave(name.trim());
           }}
         >
-          <div className="flex flex-col gap-1.5 py-2">
-            <Label
-              htmlFor="rename-input"
-              className="mono-label text-[11px] text-muted-foreground"
-            >
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rename-input" className="mono-label text-[10px] text-muted-foreground">
               {t("common.name")}
             </Label>
             <Input
@@ -57,14 +54,15 @@ export function RenameDialog({ account, onCancel, onSave }: RenameDialogProps): 
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="h-8 text-sm"
             />
           </div>
 
-          <DialogFooter className="mt-4">
-            <Button type="button" variant="ghost" onClick={onCancel}>
+          <DialogFooter className="mt-4 gap-1.5">
+            <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={!canSave}>
+            <Button type="submit" size="sm" disabled={!canSave}>
               {t("common.save")}
             </Button>
           </DialogFooter>

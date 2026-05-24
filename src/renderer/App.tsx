@@ -23,6 +23,7 @@ export default function App(): JSX.Element {
   const [apiProfileVisible, setApiProfileVisible] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Account | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [switchingId, setSwitchingId] = useState<string | null>(null);
 
   const showError = useCallback(
     (message: string | null) => {
@@ -48,6 +49,7 @@ export default function App(): JSX.Element {
   }, [showError]);
 
   async function handleSwitch(account: Account): Promise<void> {
+    setSwitchingId(account.id);
     try {
       const result = await window.authSwitch.switchAccount(account.id);
       if (!result.success) {
@@ -62,6 +64,8 @@ export default function App(): JSX.Element {
       await refresh();
     } catch (err) {
       showError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSwitchingId(null);
     }
   }
 
@@ -100,7 +104,6 @@ export default function App(): JSX.Element {
       }
       return;
     }
-
     try {
       const confirmed = await window.authSwitch.nativeConfirm(
         t("deleteDialog.title"),
@@ -146,18 +149,18 @@ export default function App(): JSX.Element {
   const isMac = /Macintosh/.test(navigator.userAgent);
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden">
+    <main className="flex h-screen flex-col overflow-hidden bg-background">
       {/* macOS traffic-light spacer */}
       {isMac && <div style={dragRegionStyle} className="h-8 w-full shrink-0" />}
 
       {/* ── Header ── */}
       <header
         style={dragRegionStyle}
-        className="flex shrink-0 items-center justify-between border-b bg-background px-5 py-3"
+        className="flex shrink-0 items-center justify-between border-b bg-background px-4 py-2.5"
       >
         <div>
-          <h1 className="text-sm font-semibold tracking-tight">auth-switch</h1>
-          <p className="mono-label text-[10px] text-muted-foreground">{t("app.localOnly")}</p>
+          <h1 className="text-sm font-semibold tracking-tight leading-tight">auth-switch</h1>
+          <p className="mono-label text-[10px] text-muted-foreground leading-tight">{t("app.localOnly")}</p>
         </div>
 
         <div style={noDragRegionStyle} className="flex items-center gap-1.5">
@@ -200,42 +203,42 @@ export default function App(): JSX.Element {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="size-7"
+            className="size-7 text-muted-foreground"
           >
-            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+            {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
           </Button>
         </div>
       </header>
 
       {/* ── Scrollable body ── */}
-      <div className="min-h-0 flex-1 overflow-y-auto bg-background px-5 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         <CurrentAccountCard account={current} />
 
-        {/* Notice / Error banner */}
+        {/* Notice / Error banner — border-l-2 style */}
         {(error ?? notice) && (
           <div
             className={cn(
-              "mt-3 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm",
+              "mt-3 border-l-2 pl-3 py-1.5 text-xs leading-5",
               error
-                ? "border-destructive/40 bg-destructive/10 text-destructive"
-                : "border-border bg-muted text-muted-foreground"
+                ? "border-destructive text-destructive"
+                : "border-border text-muted-foreground"
             )}
           >
-            {error && <AlertTriangle size={15} className="mt-0.5 shrink-0" />}
-            <p className="leading-5">{error ?? notice}</p>
+            {error && <AlertTriangle size={12} className="inline mr-1.5 mb-0.5" />}
+            {error ?? notice}
           </div>
         )}
 
         {/* Accounts section */}
-        <section className="mt-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="mono-label text-[11px] text-muted-foreground">{t("app.accounts")}</h2>
-            <div style={noDragRegionStyle} className="flex items-center gap-2">
+        <section className="mt-4">
+          <div className="mb-2.5 flex items-center justify-between">
+            <h2 className="mono-label text-[10px] text-muted-foreground">{t("app.accounts")}</h2>
+            <div style={noDragRegionStyle} className="flex items-center gap-1.5">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setApiProfileVisible(true)}
-                className="font-mono text-xs"
+                className="h-7 px-2.5 font-mono text-xs text-muted-foreground"
               >
                 {t("app.addApi")}
               </Button>
@@ -245,6 +248,7 @@ export default function App(): JSX.Element {
           <AccountList
             accounts={accounts}
             loading={loading}
+            switchingId={switchingId}
             onSwitch={(account) => void handleSwitch(account)}
             onRename={setRenameTarget}
             onDelete={(account) => void requestDelete(account)}
@@ -253,9 +257,8 @@ export default function App(): JSX.Element {
       </div>
 
       {/* ── Footer ── */}
-      <footer className="shrink-0 border-t bg-background px-5 py-2.5 text-xs leading-5 text-muted-foreground">
-        <p>{t("app.footer.local")}</p>
-        <p className="font-mono">{t("app.footer.db")}</p>
+      <footer className="shrink-0 border-t bg-background px-4 py-2 font-mono text-[10px] text-muted-foreground">
+        {t("app.footer.local")} · {t("app.footer.db")}
       </footer>
 
       {/* Overlays */}

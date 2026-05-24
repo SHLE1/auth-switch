@@ -52,10 +52,10 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onCancel(); }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t("apiProfile.title")}</DialogTitle>
-          <DialogDescription className="text-xs leading-5">
+      <DialogContent className="sm:max-w-md gap-3">
+        <DialogHeader className="gap-1">
+          <DialogTitle className="text-sm">{t("apiProfile.title")}</DialogTitle>
+          <DialogDescription className="text-[11px] leading-5">
             {t("apiProfile.desc")}
           </DialogDescription>
         </DialogHeader>
@@ -68,19 +68,19 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
             }
           }}
         >
-          <div className="flex flex-col gap-4 py-2">
-            {/* Preset picker */}
+          <div className="flex flex-col gap-3">
+            {/* Preset */}
             <div className="flex flex-col gap-1.5">
-              <Label className="mono-label text-[11px] text-muted-foreground">
+              <Label className="mono-label text-[10px] text-muted-foreground">
                 {t("apiProfile.preset")}
               </Label>
               <Select onValueChange={applyPreset} defaultValue="Custom">
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {presets.map((p) => (
-                    <SelectItem key={p.name} value={p.name}>
+                    <SelectItem key={p.name} value={p.name} className="text-sm">
                       {p.name}
                     </SelectItem>
                   ))}
@@ -92,7 +92,7 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
 
             {/* Name */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="api-name" className="mono-label text-[11px] text-muted-foreground">
+              <Label htmlFor="api-name" className="mono-label text-[10px] text-muted-foreground">
                 {t("common.name")}
               </Label>
               <Input
@@ -101,12 +101,13 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("apiProfile.namePlaceholder")}
+                className="h-8 text-sm"
               />
             </div>
 
             {/* Base URL */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="api-url" className="mono-label text-[11px] text-muted-foreground">
+              <Label htmlFor="api-url" className="mono-label text-[10px] text-muted-foreground">
                 {t("apiProfile.baseUrl")}
               </Label>
               <Input
@@ -114,12 +115,13 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 placeholder={t("apiProfile.urlPlaceholder")}
+                className="h-8 font-mono text-sm"
               />
             </div>
 
             {/* API Key */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="api-key" className="mono-label text-[11px] text-muted-foreground">
+              <Label htmlFor="api-key" className="mono-label text-[10px] text-muted-foreground">
                 {t("apiProfile.apiKey")}
               </Label>
               <Input
@@ -128,17 +130,18 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder={t("apiProfile.keyPlaceholder")}
+                className="h-8 font-mono text-sm"
               />
             </div>
 
-            <p className="text-xs text-muted-foreground">{t("apiProfile.noShellReload")}</p>
+            <p className="text-[11px] text-muted-foreground">{t("apiProfile.noShellReload")}</p>
           </div>
 
-          <DialogFooter className="mt-2">
-            <Button type="button" variant="ghost" onClick={onCancel}>
+          <DialogFooter className="mt-4 gap-1.5">
+            <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={!canSave}>
+            <Button type="submit" size="sm" disabled={!canSave}>
               {t("apiProfile.saveProfile")}
             </Button>
           </DialogFooter>

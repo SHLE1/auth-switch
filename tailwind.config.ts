@@ -47,7 +47,8 @@ export default {
         sm: "calc(var(--radius) - 4px)"
       },
       fontFamily: {
-        mono: ["SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "monospace"]
+        sans: ["GeistVariable", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        mono: ["JetBrains Mono", "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "monospace"]
       },
       keyframes: {
         "accordion-down": {
@@ -57,11 +58,16 @@ export default {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" }
+        },
+        "dot-fill": {
+          from: { transform: "scale(0)", opacity: "0" },
+          to: { transform: "scale(1)", opacity: "1" }
         }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out"
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "dot-fill": "dot-fill 0.18s ease-out"
       }
     }
   },
