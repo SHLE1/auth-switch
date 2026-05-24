@@ -26,17 +26,22 @@ function hasAnyExternalUpdaterReference(source) {
   ].some((pattern) => pattern.test(source));
 }
 
+function normalizeAsarPath(file) {
+  return file.replace(/\\/g, "/");
+}
+
 function verifyAsar(appAsar) {
   const files = asar.listPackage(appAsar);
+  const normalizedFiles = new Map(files.map((file) => [normalizeAsarPath(file), file]));
   const mainBundlePath = "/out/main/index.js";
 
-  if (!files.includes(mainBundlePath)) {
+  if (!normalizedFiles.has(mainBundlePath)) {
     throw new Error(`${appAsar}: missing ${mainBundlePath}`);
   }
 
-  const mainSources = files
-    .filter((file) => file.startsWith("/out/main/") && file.endsWith(".js"))
-    .map((file) => asar.extractFile(appAsar, file.slice(1)).toString("utf8"));
+  const mainSources = [...normalizedFiles.entries()]
+    .filter(([normalized]) => normalized.startsWith("/out/main/") && normalized.endsWith(".js"))
+    .map(([, original]) => asar.extractFile(appAsar, original.replace(/^[/\\]/, "")).toString("utf8"));
   const updaterIsRuntimeExternal = mainSources.some(hasAnyExternalUpdaterReference);
 
   if (!updaterIsRuntimeExternal) {
@@ -64,7 +69,7 @@ function verifyAsar(appAsar) {
   ];
 
   const missing = requiredExternalPackages.filter(
-    (packageName) => !files.some((file) => file.startsWith(`/node_modules/${packageName}/`))
+    (packageName) => ![...normalizedFiles.keys()].some((file) => file.startsWith(`/node_modules/${packageName}/`))
   );
 
   if (missing.length > 0) {
