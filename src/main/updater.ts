@@ -1,78 +1,115 @@
 import { app, dialog } from "electron";
-import updaterPkg from "electron-updater";
 import { tMain } from "./i18n";
 
-const { autoUpdater } = updaterPkg;
+type AutoUpdater = typeof import("electron-updater").autoUpdater;
 
+let autoUpdater: AutoUpdater | null = null;
+let configurePromise: Promise<AutoUpdater | null> | null = null;
 let configured = false;
 let checking = false;
 let showResultForCurrentCheck = false;
 
-export function configureAutoUpdates(): void {
-  if (configured) return;
-  configured = true;
+async function loadAutoUpdater(): Promise<AutoUpdater> {
+  const updaterPkg = await import("electron-updater");
+  const updater = updaterPkg.autoUpdater ?? updaterPkg.default?.autoUpdater;
 
-  autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.allowPrerelease = false;
+  if (!updater) {
+    throw new Error("electron-updater did not expose autoUpdater");
+  }
 
-  autoUpdater.on("checking-for-update", () => {
-    checking = true;
-  });
+  return updater;
+}
 
-  autoUpdater.on("update-available", (info) => {
-    console.info(`[updater] update available: ${info.version}`);
-  });
+async function ensureAutoUpdatesConfigured(): Promise<AutoUpdater | null> {
+  if (configured) return autoUpdater;
+  if (configurePromise) return configurePromise;
 
-  autoUpdater.on("update-not-available", async (info) => {
-    checking = false;
-    console.info(`[updater] no update available: ${info.version}`);
+  configurePromise = (async () => {
+    const updater = await loadAutoUpdater();
+    autoUpdater = updater;
 
-    if (showResultForCurrentCheck) {
-      showResultForCurrentCheck = false;
-      await dialog.showMessageBox({
-        type: "info",
-        message: tMain("updater.noUpdateTitle"),
-        detail: tMain("updater.noUpdateDetail")
-      });
-    }
-  });
+    updater.autoDownload = true;
+    updater.autoInstallOnAppQuit = true;
+    updater.allowPrerelease = false;
 
-  autoUpdater.on("download-progress", (progress) => {
-    console.info(`[updater] downloading ${progress.percent.toFixed(1)}%`);
-  });
-
-  autoUpdater.on("update-downloaded", async (info) => {
-    checking = false;
-    showResultForCurrentCheck = false;
-
-    const result = await dialog.showMessageBox({
-      type: "info",
-      buttons: [tMain("updater.restartNow"), tMain("updater.later")],
-      defaultId: 0,
-      cancelId: 1,
-      message: tMain("updater.readyTitle"),
-      detail: tMain("updater.readyDetail", { version: info.version })
+    updater.on("checking-for-update", () => {
+      checking = true;
     });
 
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall();
-    }
-  });
+    updater.on("update-available", (info) => {
+      console.info(`[updater] update available: ${info.version}`);
+    });
 
-  autoUpdater.on("error", async (error) => {
-    checking = false;
-    console.error("[updater] update error", error);
+    updater.on("update-not-available", async (info) => {
+      checking = false;
+      console.info(`[updater] no update available: ${info.version}`);
 
-    if (showResultForCurrentCheck) {
+      if (showResultForCurrentCheck) {
+        showResultForCurrentCheck = false;
+        await dialog.showMessageBox({
+          type: "info",
+          message: tMain("updater.noUpdateTitle"),
+          detail: tMain("updater.noUpdateDetail")
+        });
+      }
+    });
+
+    updater.on("download-progress", (progress) => {
+      console.info(`[updater] downloading ${progress.percent.toFixed(1)}%`);
+    });
+
+    updater.on("update-downloaded", async (info) => {
+      checking = false;
       showResultForCurrentCheck = false;
-      await dialog.showMessageBox({
-        type: "error",
-        message: tMain("updater.errorTitle"),
-        detail: error instanceof Error ? error.message : String(error)
+
+      const result = await dialog.showMessageBox({
+        type: "info",
+        buttons: [tMain("updater.restartNow"), tMain("updater.later")],
+        defaultId: 0,
+        cancelId: 1,
+        message: tMain("updater.readyTitle"),
+        detail: tMain("updater.readyDetail", { version: info.version })
       });
-    }
+
+      if (result.response === 0) {
+        updater.quitAndInstall();
+      }
+    });
+
+    updater.on("error", async (error) => {
+      checking = false;
+      console.error("[updater] update error", error);
+
+      if (showResultForCurrentCheck) {
+        showResultForCurrentCheck = false;
+        await dialog.showMessageBox({
+          type: "error",
+          message: tMain("updater.errorTitle"),
+          detail: error instanceof Error ? error.message : String(error)
+        });
+      }
+    });
+
+    configured = true;
+    return updater;
+  })().catch((error) => {
+    configurePromise = null;
+    autoUpdater = null;
+    configured = false;
+    throw error;
   });
+
+  return configurePromise;
+}
+
+export async function configureAutoUpdates(): Promise<boolean> {
+  try {
+    await ensureAutoUpdatesConfigured();
+    return true;
+  } catch (error) {
+    console.error("[updater] auto updater unavailable; continuing without update checks", error);
+    return false;
+  }
 }
 
 export function scheduleAutomaticUpdateCheck(): void {
@@ -84,8 +121,6 @@ export function scheduleAutomaticUpdateCheck(): void {
 }
 
 export async function checkForUpdates(options: { showNoUpdateDialog?: boolean } = {}): Promise<void> {
-  configureAutoUpdates();
-
   if (!app.isPackaged) {
     if (options.showNoUpdateDialog) {
       await dialog.showMessageBox({
@@ -96,6 +131,24 @@ export async function checkForUpdates(options: { showNoUpdateDialog?: boolean } 
     }
     return;
   }
+
+  const updater = await ensureAutoUpdatesConfigured().catch(async (error) => {
+    checking = false;
+    showResultForCurrentCheck = false;
+    console.error("[updater] auto updater unavailable", error);
+
+    if (options.showNoUpdateDialog) {
+      await dialog.showMessageBox({
+        type: "error",
+        message: tMain("updater.errorTitle"),
+        detail: error instanceof Error ? error.message : String(error)
+      });
+    }
+
+    return null;
+  });
+
+  if (!updater) return;
 
   if (checking) {
     if (options.showNoUpdateDialog) {
@@ -111,7 +164,7 @@ export async function checkForUpdates(options: { showNoUpdateDialog?: boolean } 
   try {
     checking = true;
     showResultForCurrentCheck = options.showNoUpdateDialog === true;
-    await autoUpdater.checkForUpdates();
+    await updater.checkForUpdates();
   } catch (error) {
     checking = false;
     showResultForCurrentCheck = false;
@@ -124,4 +177,3 @@ export async function checkForUpdates(options: { showNoUpdateDialog?: boolean } 
     }
   }
 }
-

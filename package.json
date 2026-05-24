@@ -32,10 +32,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "electron-updater": "^6.8.3",
-    "fs-extra": "^10.1.0",
     "i18next": "^26.2.0",
-    "lodash.escaperegexp": "^4.1.2",
-    "lodash.isequal": "^4.5.0",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -44,6 +41,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@electron/asar": "^3.4.1",
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.18",

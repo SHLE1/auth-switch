@@ -27,7 +27,7 @@ if (!gotSingleInstanceLock) {
     registerIpc();
     buildAppMenu();
     createTray();
-    configureAutoUpdates();
+    void configureAutoUpdates();
     scheduleAutomaticUpdateCheck();
 
     // Windows: app menu is null so no accelerators work. Register global shortcuts
