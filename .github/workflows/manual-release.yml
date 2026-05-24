@@ -263,13 +263,21 @@ jobs:
           VERSION_TAG="${{ needs.resolve-version.outputs.version_tag }}"
           PREVIOUS_TAG="${{ needs.resolve-version.outputs.previous_tag }}"
 
-          gh api repos/${{ github.repository }}/releases/generate-notes \
-            -f tag_name="$VERSION_TAG" \
-            -f target_commitish="$VERSION_TAG" \
-            -f previous_tag_name="$PREVIOUS_TAG" \
-            --jq '.body' > "$RUNNER_TEMP/generated-release-notes-body.md"
+          GENERATE_ARGS=(
+            -f tag_name="$VERSION_TAG"
+            -f target_commitish="$VERSION_TAG"
+          )
 
-          git log --no-merges --pretty=format:'- %s' "$PREVIOUS_TAG".."$VERSION_TAG" > "$RUNNER_TEMP/generated-commit-summary.md" || true
+          if [ "$PREVIOUS_TAG" != "$VERSION_TAG" ] && git rev-parse -q --verify "refs/tags/${PREVIOUS_TAG}" >/dev/null 2>&1; then
+            GENERATE_ARGS+=(-f previous_tag_name="$PREVIOUS_TAG")
+            git log --no-merges --pretty=format:'- %s' "$PREVIOUS_TAG".."$VERSION_TAG" > "$RUNNER_TEMP/generated-commit-summary.md" || true
+          else
+            git log --no-merges --pretty=format:'- %s' "$VERSION_TAG" -n 50 > "$RUNNER_TEMP/generated-commit-summary.md" || true
+          fi
+
+          gh api repos/${{ github.repository }}/releases/generate-notes \
+            "${GENERATE_ARGS[@]}" \
+            --jq '.body' > "$RUNNER_TEMP/generated-release-notes-body.md"
 
       - name: Create release notes files
         shell: bash
