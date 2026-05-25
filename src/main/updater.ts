@@ -2,6 +2,7 @@ import { app, dialog } from "electron";
 import { getErrorMessage } from "../shared/errors";
 import { tMain } from "./i18n";
 import { logMain } from "./logger";
+import { setQuitting } from "./window";
 
 type AutoUpdater = typeof import("electron-updater").autoUpdater;
 
@@ -32,6 +33,7 @@ async function ensureAutoUpdatesConfigured(): Promise<AutoUpdater | null> {
 
     updater.autoDownload = true;
     updater.autoInstallOnAppQuit = true;
+    updater.autoRunAppAfterInstall = true;
     updater.allowPrerelease = false;
 
     updater.on("checking-for-update", () => {
@@ -74,7 +76,7 @@ async function ensureAutoUpdatesConfigured(): Promise<AutoUpdater | null> {
       });
 
       if (result.response === 0) {
-        updater.quitAndInstall();
+        installDownloadedUpdate(updater);
       }
     });
 
@@ -102,6 +104,12 @@ async function ensureAutoUpdatesConfigured(): Promise<AutoUpdater | null> {
   });
 
   return configurePromise;
+}
+
+function installDownloadedUpdate(updater: AutoUpdater): void {
+  logMain("[updater] installing downloaded update");
+  setQuitting(true);
+  updater.quitAndInstall(false, true);
 }
 
 export async function configureAutoUpdates(): Promise<boolean> {
