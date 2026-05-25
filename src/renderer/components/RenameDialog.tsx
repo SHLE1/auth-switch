@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,12 @@ export function RenameDialog({ account, onCancel, onSave }: RenameDialogProps): 
   const canSave = name.trim().length > 0;
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onCancel(); }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
       <DialogContent className="sm:max-w-sm gap-3">
         <DialogHeader className="gap-1">
           <DialogTitle className="text-sm">{t("rename.title")}</DialogTitle>

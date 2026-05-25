@@ -8,7 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import type { Account } from "../types";
 
@@ -25,14 +25,13 @@ export function AccountRow({
   switchingId,
   onSwitch,
   onRename,
-  onDelete,
+  onDelete
 }: AccountRowProps): JSX.Element {
   const { t } = useTranslation();
   const isSwitching = switchingId === account.id;
 
   return (
     <li className="flex items-center gap-3 px-3 py-2.5">
-      {/* Active indicator dot */}
       <span
         className={cn(
           "size-3.5 shrink-0 rounded-full border transition-colors duration-150",
@@ -42,7 +41,6 @@ export function AccountRow({
         )}
       />
 
-      {/* Main content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
@@ -85,7 +83,6 @@ export function AccountRow({
               </Button>
             )}
 
-            {/* ··· dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

@@ -1,7 +1,10 @@
 import { getDatabase } from "./database";
 
 export function getSetting(key: string): string | null {
-  const row = getDatabase().prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string | null } | undefined;
+  const row = getDatabase()
+    .prepare("SELECT value FROM settings WHERE key = ?")
+    .get(key) as { value: string | null } | undefined;
+
   return row?.value ?? null;
 }
 

@@ -47,9 +47,7 @@ export function toAccount(row: AccountRow): Account {
 }
 
 export function getAllAccounts(): AccountRow[] {
-  return getDatabase()
-    .prepare("SELECT * FROM accounts ORDER BY created_at ASC")
-    .all() as AccountRow[];
+  return getDatabase().prepare("SELECT * FROM accounts ORDER BY created_at ASC").all() as AccountRow[];
 }
 
 export function getAccountById(id: string): AccountRow | null {
@@ -57,11 +55,11 @@ export function getAccountById(id: string): AccountRow | null {
 }
 
 export function getCurrentAccount(): AccountRow | null {
-  return (
-    getDatabase().prepare("SELECT * FROM accounts WHERE is_current = 1 ORDER BY last_used_at DESC LIMIT 1").get() as
-      | AccountRow
-      | undefined
-  ) ?? null;
+  const row = getDatabase()
+    .prepare("SELECT * FROM accounts WHERE is_current = 1 ORDER BY last_used_at DESC LIMIT 1")
+    .get() as AccountRow | undefined;
+
+  return row ?? null;
 }
 
 export function insertAccount(row: NewAccountRow): void {
@@ -85,12 +83,6 @@ export function updateAccountMeta(id: string, values: { name?: string; email?: s
     .run(values.name ?? existing.name, values.email ?? existing.email, Date.now(), id);
 }
 
-export function updateAccountAuthJson(id: string, authJson: string, authHash: string, updatedAt = Date.now()): void {
-  getDatabase()
-    .prepare("UPDATE accounts SET auth_json = ?, auth_hash = ?, updated_at = ? WHERE id = ?")
-    .run(authJson, authHash, updatedAt, id);
-}
-
 export function updateAccountLiveSnapshot(id: string, authJson: string, authHash: string, updatedAt = Date.now()): void {
   getDatabase()
     .prepare("UPDATE accounts SET auth_json = ?, auth_hash = ?, updated_at = ? WHERE id = ?")
@@ -101,7 +93,9 @@ export function setCurrentAccount(id: string): void {
   const database = getDatabase();
   const setCurrent = database.transaction((targetId: string, now: number) => {
     database.prepare("UPDATE accounts SET is_current = 0").run();
-    database.prepare("UPDATE accounts SET is_current = 1, last_used_at = ?, updated_at = ? WHERE id = ?").run(now, now, targetId);
+    database
+      .prepare("UPDATE accounts SET is_current = 1, last_used_at = ?, updated_at = ? WHERE id = ?")
+      .run(now, now, targetId);
   });
   setCurrent(id, Date.now());
 }
@@ -123,5 +117,9 @@ export function apiProfileExists(authHash: string, baseUrl: string): boolean {
 }
 
 export function findByEmail(email: string): AccountRow | null {
-  return (getDatabase().prepare("SELECT * FROM accounts WHERE email = ? LIMIT 1").get(email) as AccountRow | undefined) ?? null;
+  const row = getDatabase()
+    .prepare("SELECT * FROM accounts WHERE email = ? LIMIT 1")
+    .get(email) as AccountRow | undefined;
+
+  return row ?? null;
 }

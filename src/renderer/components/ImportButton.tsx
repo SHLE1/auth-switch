@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { getErrorMessage } from "../../shared/errors";
 import type { ImportResult } from "../types";
 
 interface ImportButtonProps {
@@ -25,7 +26,7 @@ export function ImportButton({ onImported, onError }: ImportButtonProps): JSX.El
       }
       onImported(result);
     } catch (error) {
-      onError(error instanceof Error ? error.message : String(error));
+      onError(getErrorMessage(error));
     } finally {
       setBusy(false);
     }

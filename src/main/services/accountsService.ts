@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import type { Account, CodexApiProfileInput, ImportResult, LiveAuthStatus, SwitchResult } from "../../shared/types";
+import { getErrorMessage } from "../../shared/errors";
 import {
   authHashExists,
   apiProfileExists,
@@ -72,7 +73,7 @@ export function importAuthFileFromPath(filePath: string, name?: string, setCurre
       account: account ? toAccount(account) : undefined
     };
   } catch (error) {
-    return { success: false, error: formatError(error) };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -109,7 +110,7 @@ export function createApiProfile(input: CodexApiProfileInput): ImportResult {
     const account = getAccountById(id);
     return { success: true, account: account ? toAccount(account) : undefined };
   } catch (error) {
-    return { success: false, error: formatError(error) };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -173,7 +174,7 @@ export function switchAccount(id: string): SwitchResult {
           updateAccountLiveSnapshot(current.id, live.content, live.hash, Date.now());
         }
       } catch (error) {
-        console.warn("Skipping current-account backfill:", formatError(error));
+        console.warn("Skipping current-account backfill:", getErrorMessage(error));
       }
     }
 
@@ -194,7 +195,7 @@ export function switchAccount(id: string): SwitchResult {
     const updatedTarget = getAccountById(target.id);
     return { success: true, account: updatedTarget ? toAccount(updatedTarget) : toAccount(target) };
   } catch (error) {
-    return { success: false, error: formatError(error) };
+    return { success: false, error: getErrorMessage(error) };
   } finally {
     switchInProgress = false;
   }
@@ -203,8 +204,4 @@ export function switchAccount(id: string): SwitchResult {
 function cleanName(name: string | undefined): string | null {
   const trimmed = name?.trim();
   return trimmed ? trimmed : null;
-}
-
-function formatError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

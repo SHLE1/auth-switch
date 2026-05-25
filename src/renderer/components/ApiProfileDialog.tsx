@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import type { CodexApiProfileInput } from "../types";
@@ -31,7 +31,7 @@ const presets = [
   { name: "AiHubMix", baseUrl: "https://aihubmix.com/v1" },
   { name: "PatewayAI", baseUrl: "https://api.pateway.ai/v1" },
   { name: "DMXAPI", baseUrl: "https://www.dmxapi.cn/v1" },
-  { name: "Azure OpenAI", baseUrl: "https://YOUR_RESOURCE_NAME.openai.azure.com/openai" },
+  { name: "Azure OpenAI", baseUrl: "https://YOUR_RESOURCE_NAME.openai.azure.com/openai" }
 ];
 
 export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): JSX.Element {
@@ -40,18 +40,22 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
 
-  const canSave =
-    name.trim().length > 0 && apiKey.trim().length > 0 && baseUrl.trim().length > 0;
+  const canSave = name.trim().length > 0 && apiKey.trim().length > 0 && baseUrl.trim().length > 0;
 
   function applyPreset(value: string): void {
-    const preset = presets.find((p) => p.name === value);
+    const preset = presets.find((item) => item.name === value);
     if (!preset) return;
     setName(preset.name === "Custom" ? "Custom API" : preset.name);
     setBaseUrl(preset.baseUrl);
   }
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onCancel(); }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
       <DialogContent className="sm:max-w-md gap-3">
         <DialogHeader className="gap-1">
           <DialogTitle className="text-sm">{t("apiProfile.title")}</DialogTitle>
@@ -69,7 +73,6 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
           }}
         >
           <div className="flex flex-col gap-3">
-            {/* Preset */}
             <div className="flex flex-col gap-1.5">
               <Label className="mono-label text-[10px] text-muted-foreground">
                 {t("apiProfile.preset")}
@@ -79,9 +82,9 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {presets.map((p) => (
-                    <SelectItem key={p.name} value={p.name} className="text-sm">
-                      {p.name}
+                  {presets.map((preset) => (
+                    <SelectItem key={preset.name} value={preset.name} className="text-sm">
+                      {preset.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -90,7 +93,6 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
 
             <Separator />
 
-            {/* Name */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="api-name" className="mono-label text-[10px] text-muted-foreground">
                 {t("common.name")}
@@ -105,7 +107,6 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
               />
             </div>
 
-            {/* Base URL */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="api-url" className="mono-label text-[10px] text-muted-foreground">
                 {t("apiProfile.baseUrl")}
@@ -119,7 +120,6 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
               />
             </div>
 
-            {/* API Key */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="api-key" className="mono-label text-[10px] text-muted-foreground">
                 {t("apiProfile.apiKey")}

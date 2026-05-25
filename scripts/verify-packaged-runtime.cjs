@@ -30,9 +30,14 @@ function normalizeAsarPath(file) {
   return file.replace(/\\/g, "/");
 }
 
+function hasPackagedNodeModule(normalizedFilePaths, packageName) {
+  return normalizedFilePaths.some((file) => file.startsWith(`/node_modules/${packageName}/`));
+}
+
 function verifyAsar(appAsar) {
   const files = asar.listPackage(appAsar);
   const normalizedFiles = new Map(files.map((file) => [normalizeAsarPath(file), file]));
+  const normalizedFilePaths = [...normalizedFiles.keys()];
   const mainBundlePath = "/out/main/index.js";
   const resourcesDir = path.dirname(appAsar);
   const externalTrayIcon = path.join(resourcesDir, "assets", "tray-icon.png");
@@ -48,14 +53,23 @@ function verifyAsar(appAsar) {
 
   const requiredSqlitePackages = ["better-sqlite3", "bindings", "file-uri-to-path"];
   const missingSqlitePackages = requiredSqlitePackages.filter(
-    (packageName) => ![...normalizedFiles.keys()].some((file) => file.startsWith(`/node_modules/${packageName}/`))
+    (packageName) => !hasPackagedNodeModule(normalizedFilePaths, packageName)
   );
 
   if (missingSqlitePackages.length > 0) {
-    throw new Error(`${appAsar}: better-sqlite3 runtime dependencies are incomplete: ${missingSqlitePackages.join(", ")}`);
+    throw new Error(
+      `${appAsar}: better-sqlite3 runtime dependencies are incomplete: ${missingSqlitePackages.join(", ")}`
+    );
   }
 
-  const nativeSqliteBinding = path.join(unpackedDir, "node_modules", "better-sqlite3", "build", "Release", "better_sqlite3.node");
+  const nativeSqliteBinding = path.join(
+    unpackedDir,
+    "node_modules",
+    "better-sqlite3",
+    "build",
+    "Release",
+    "better_sqlite3.node"
+  );
   if (!fs.existsSync(nativeSqliteBinding)) {
     throw new Error(`${appAsar}: missing unpacked better-sqlite3 native binding`);
   }
@@ -90,7 +104,7 @@ function verifyAsar(appAsar) {
   ];
 
   const missing = requiredExternalPackages.filter(
-    (packageName) => ![...normalizedFiles.keys()].some((file) => file.startsWith(`/node_modules/${packageName}/`))
+    (packageName) => !hasPackagedNodeModule(normalizedFilePaths, packageName)
   );
 
   if (missing.length > 0) {

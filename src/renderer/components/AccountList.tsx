@@ -1,6 +1,5 @@
 import { FileKey } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Separator } from "@/components/ui/separator";
 import type { Account } from "../types";
 import { AccountRow } from "./AccountRow";
 
@@ -19,7 +18,7 @@ export function AccountList({
   switchingId,
   onSwitch,
   onRename,
-  onDelete,
+  onDelete
 }: AccountListProps): JSX.Element {
   const { t } = useTranslation();
 
@@ -50,7 +49,7 @@ export function AccountList({
 
   return (
     <ul className="rounded-md border divide-y">
-      {accounts.map((account, i) => (
+      {accounts.map((account) => (
         <AccountRow
           key={account.id}
           account={account}

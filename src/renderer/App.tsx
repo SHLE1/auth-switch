@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { AlertTriangle, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getErrorMessage } from "../shared/errors";
 import { setLanguage } from "./i18n/index";
 import { useAccounts } from "./hooks/useAccounts";
 import { useTheme } from "./hooks/useTheme";
@@ -45,7 +46,7 @@ export default function App(): JSX.Element {
     window.authSwitch
       .shouldShowFirstRun()
       .then(setFirstRunVisible)
-      .catch((err) => showError(err instanceof Error ? err.message : String(err)));
+      .catch((error) => showError(getErrorMessage(error)));
   }, [showError]);
 
   async function handleSwitch(account: Account): Promise<void> {
@@ -62,8 +63,8 @@ export default function App(): JSX.Element {
           : t("notice.switchedTo", { name: account.name })
       );
       await refresh();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : String(err));
+    } catch (error) {
+      showError(getErrorMessage(error));
     } finally {
       setSwitchingId(null);
     }
@@ -76,8 +77,8 @@ export default function App(): JSX.Element {
       setRenameTarget(null);
       showNotice(t("notice.renamed", { name }));
       await refresh();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : String(err));
+    } catch (error) {
+      showError(getErrorMessage(error));
     }
   }
 
@@ -86,8 +87,8 @@ export default function App(): JSX.Element {
       await window.authSwitch.deleteAccount(account.id);
       showNotice(t("notice.deleted", { name: account.name }));
       await refresh();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : String(err));
+    } catch (error) {
+      showError(getErrorMessage(error));
     }
   }
 
@@ -99,8 +100,8 @@ export default function App(): JSX.Element {
           t("deleteDialog.isCurrent"),
           t("common.ok")
         );
-      } catch (err) {
-        showError(err instanceof Error ? err.message : String(err));
+      } catch (error) {
+        showError(getErrorMessage(error));
       }
       return;
     }
@@ -112,8 +113,8 @@ export default function App(): JSX.Element {
         t("common.cancel")
       );
       if (confirmed) await handleDelete(account);
-    } catch (err) {
-      showError(err instanceof Error ? err.message : String(err));
+    } catch (error) {
+      showError(getErrorMessage(error));
     }
   }
 
@@ -127,8 +128,8 @@ export default function App(): JSX.Element {
       setApiProfileVisible(false);
       showNotice(t("notice.savedApiProfile", { name: result.account?.name ?? input.name }));
       await refresh();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : String(err));
+    } catch (error) {
+      showError(getErrorMessage(error));
     }
   }
 
@@ -150,10 +151,8 @@ export default function App(): JSX.Element {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-background">
-      {/* macOS traffic-light spacer */}
       {isMac && <div style={dragRegionStyle} className="h-8 w-full shrink-0" />}
 
-      {/* ── Header ── */}
       <header
         style={dragRegionStyle}
         className="flex shrink-0 items-center justify-between border-b bg-background px-4 py-2.5"
@@ -164,7 +163,6 @@ export default function App(): JSX.Element {
         </div>
 
         <div style={noDragRegionStyle} className="flex items-center gap-1.5">
-          {/* Language toggle */}
           <div className="flex rounded-md border overflow-hidden">
             <Button
               type="button"
@@ -197,7 +195,6 @@ export default function App(): JSX.Element {
             </Button>
           </div>
 
-          {/* Theme toggle */}
           <Button
             type="button"
             variant="ghost"
@@ -210,11 +207,9 @@ export default function App(): JSX.Element {
         </div>
       </header>
 
-      {/* ── Scrollable body ── */}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         <CurrentAccountCard account={current} />
 
-        {/* Notice / Error banner — border-l-2 style */}
         {(error ?? notice) && (
           <div
             className={cn(
@@ -229,7 +224,6 @@ export default function App(): JSX.Element {
           </div>
         )}
 
-        {/* Accounts section */}
         <section className="mt-4">
           <div className="mb-2.5 flex items-center justify-between">
             <h2 className="mono-label text-[10px] text-muted-foreground">{t("app.accounts")}</h2>
@@ -256,12 +250,10 @@ export default function App(): JSX.Element {
         </section>
       </div>
 
-      {/* ── Footer ── */}
       <footer className="shrink-0 border-t bg-background px-4 py-2 font-mono text-[10px] text-muted-foreground">
         {t("app.footer.local")} · {t("app.footer.db")}
       </footer>
 
-      {/* Overlays */}
       {firstRunVisible && (
         <FirstRunDialog
           onDone={() => {

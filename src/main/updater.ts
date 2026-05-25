@@ -1,4 +1,5 @@
 import { app, dialog } from "electron";
+import { getErrorMessage } from "../shared/errors";
 import { tMain } from "./i18n";
 import { logMain } from "./logger";
 
@@ -86,7 +87,7 @@ async function ensureAutoUpdatesConfigured(): Promise<AutoUpdater | null> {
         await dialog.showMessageBox({
           type: "error",
           message: tMain("updater.errorTitle"),
-          detail: error instanceof Error ? error.message : String(error)
+          detail: getErrorMessage(error)
         });
       }
     });
@@ -142,7 +143,7 @@ export async function checkForUpdates(options: { showNoUpdateDialog?: boolean } 
       await dialog.showMessageBox({
         type: "error",
         message: tMain("updater.errorTitle"),
-        detail: error instanceof Error ? error.message : String(error)
+        detail: getErrorMessage(error)
       });
     }
 
@@ -173,7 +174,7 @@ export async function checkForUpdates(options: { showNoUpdateDialog?: boolean } 
       await dialog.showMessageBox({
         type: "error",
         message: tMain("updater.errorTitle"),
-        detail: error instanceof Error ? error.message : String(error)
+        detail: getErrorMessage(error)
       });
     }
   }

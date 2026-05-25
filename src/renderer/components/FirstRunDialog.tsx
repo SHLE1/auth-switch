@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getErrorMessage } from "../../shared/errors";
 import type { LiveAuthStatus } from "../types";
 
 interface FirstRunDialogProps {
@@ -31,7 +32,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
         setStatus(nextStatus);
         setName(nextStatus.email ?? t("firstRun.unnamedAccount"));
       })
-      .catch((error) => onError(error instanceof Error ? error.message : String(error)));
+      .catch((error) => onError(getErrorMessage(error)));
   }, [onError, t]);
 
   async function dismiss(): Promise<void> {
@@ -39,7 +40,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
       await window.authSwitch.dismissFirstRun();
       onDone();
     } catch (error) {
-      onError(error instanceof Error ? error.message : String(error));
+      onError(getErrorMessage(error));
     }
   }
 
@@ -53,7 +54,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
       }
       await dismiss();
     } catch (error) {
-      onError(error instanceof Error ? error.message : String(error));
+      onError(getErrorMessage(error));
     } finally {
       setBusy(false);
     }

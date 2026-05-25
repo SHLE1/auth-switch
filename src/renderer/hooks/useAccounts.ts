@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { getErrorMessage } from "../../shared/errors";
 import type { Account } from "../types";
 
 export function useAccounts(): {
@@ -19,8 +20,8 @@ export function useAccounts(): {
       const nextAccounts = await window.authSwitch.getAccounts();
       setAccounts(nextAccounts);
       setError(null);
-    } catch (err) {
-      setError(formatError(err));
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -36,8 +37,4 @@ export function useAccounts(): {
   const current = useMemo(() => accounts.find((account) => account.is_current) ?? null, [accounts]);
 
   return { accounts, current, loading, error, setError, refresh };
-}
-
-function formatError(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
 }

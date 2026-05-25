@@ -37,7 +37,6 @@ export function createTray(): Tray | null {
 export function rebuildTrayMenu(): void {
   if (!tray) return;
 
-  // Update tooltip in case language changed
   tray.setToolTip(tMain("tray.tooltip"));
 
   const accounts = listAccounts();
@@ -102,7 +101,11 @@ export function rebuildTrayMenu(): void {
       }
     },
     { type: "separator" },
-    { label: tMain("tray.openWindow"), accelerator: process.platform === "darwin" ? "Command+," : undefined, click: () => showMainWindow() },
+    {
+      label: tMain("tray.openWindow"),
+      accelerator: process.platform === "darwin" ? "Command+," : undefined,
+      click: () => showMainWindow()
+    },
     {
       label: tMain("updater.checkForUpdates"),
       click: () => {
@@ -112,7 +115,7 @@ export function rebuildTrayMenu(): void {
     { type: "separator" },
     {
       label: tMain("tray.quit"),
-      accelerator: process.platform === "darwin" ? "Command+Q" : process.platform === "win32" ? "Ctrl+Q" : undefined,
+      accelerator: quitAccelerator(),
       click: () => {
         setQuitting(true);
         app.quit();
@@ -121,6 +124,12 @@ export function rebuildTrayMenu(): void {
   ];
 
   tray.setContextMenu(Menu.buildFromTemplate(template));
+}
+
+function quitAccelerator(): string | undefined {
+  if (process.platform === "darwin") return "Command+Q";
+  if (process.platform === "win32") return "Ctrl+Q";
+  return undefined;
 }
 
 function loadTrayIcon(): Electron.NativeImage {
