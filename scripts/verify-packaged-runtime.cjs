@@ -36,6 +36,7 @@ function verifyAsar(appAsar) {
   const mainBundlePath = "/out/main/index.js";
   const resourcesDir = path.dirname(appAsar);
   const externalTrayIcon = path.join(resourcesDir, "assets", "tray-icon.png");
+  const unpackedDir = path.join(resourcesDir, "app.asar.unpacked");
 
   if (!normalizedFiles.has(mainBundlePath)) {
     throw new Error(`${appAsar}: missing ${mainBundlePath}`);
@@ -43,6 +44,20 @@ function verifyAsar(appAsar) {
 
   if (!fs.existsSync(externalTrayIcon) && !normalizedFiles.has("/assets/tray-icon.png")) {
     throw new Error(`${appAsar}: missing packaged tray icon`);
+  }
+
+  const requiredSqlitePackages = ["better-sqlite3", "bindings", "file-uri-to-path"];
+  const missingSqlitePackages = requiredSqlitePackages.filter(
+    (packageName) => ![...normalizedFiles.keys()].some((file) => file.startsWith(`/node_modules/${packageName}/`))
+  );
+
+  if (missingSqlitePackages.length > 0) {
+    throw new Error(`${appAsar}: better-sqlite3 runtime dependencies are incomplete: ${missingSqlitePackages.join(", ")}`);
+  }
+
+  const nativeSqliteBinding = path.join(unpackedDir, "node_modules", "better-sqlite3", "build", "Release", "better_sqlite3.node");
+  if (!fs.existsSync(nativeSqliteBinding)) {
+    throw new Error(`${appAsar}: missing unpacked better-sqlite3 native binding`);
   }
 
   const mainSources = [...normalizedFiles.entries()]
