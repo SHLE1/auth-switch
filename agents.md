@@ -89,6 +89,7 @@
 - Build a DMG whenever there is a new feature or fix, without waiting to be asked.
 - After building a DMG, report the path, size, and SHA256. Current release path convention: `release/auth-switch-0.1.0-arm64.dmg`.
 - macOS builds are currently unsigned; mention that users may need right-click/Open or allow the app in Privacy & Security.
+- GitHub releases must be published through GitHub Actions, preferably `.github/workflows/manual-release.yml`. Do not manually create GitHub releases or upload release assets from the local machine unless the user explicitly overrides this rule.
 
 ### README maintenance rule
 **Every time a new feature is added, changed, or removed, both `README.md` (English) and `README.zh.md` (Simplified Chinese) must be updated in the same commit.**
