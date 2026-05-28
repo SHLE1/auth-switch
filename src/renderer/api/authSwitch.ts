@@ -1,0 +1,42 @@
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import type {
+  Account,
+  AuthSwitchApi,
+  CodexApiProfileInput,
+  ImportResult,
+  LiveAuthStatus,
+  SwitchResult
+} from "../../shared/types";
+
+export const authSwitch: AuthSwitchApi = {
+  getAccounts: () => invoke<Account[]>("get_accounts"),
+  getCurrentAccount: () => invoke<Account | null>("get_current_account"),
+  switchAccount: (id: string) => invoke<SwitchResult>("switch_account", { id }),
+  importAuthFile: () => invoke<ImportResult>("import_auth_file"),
+  createApiProfile: (input: CodexApiProfileInput) => invoke<ImportResult>("create_api_profile", { input }),
+  importLiveAuthFile: (name?: string, setCurrent?: boolean) =>
+    invoke<ImportResult>("import_live_auth_file", { name, setCurrent }),
+  renameAccount: (id: string, name: string) => invoke<void>("rename_account", { id, name }),
+  deleteAccount: (id: string) => invoke<void>("delete_account", { id }),
+  nativeConfirm: (title: string, message: string, confirmLabel: string, cancelLabel: string) =>
+    invoke<boolean>("native_confirm", { title, message, confirmLabel, cancelLabel }),
+  nativeMessage: (title: string, message: string, buttonLabel: string) =>
+    invoke<void>("native_message", { title, message, buttonLabel }),
+  setLanguage: (locale: string) => invoke<void>("set_language", { locale }),
+  getLiveAuthStatus: () => invoke<LiveAuthStatus>("get_live_auth_status"),
+  dismissFirstRun: () => invoke<void>("dismiss_first_run"),
+  shouldShowFirstRun: () => invoke<boolean>("should_show_first_run"),
+  onAccountsChanged: (callback: () => void) => {
+    let disposed = false;
+    let unlisten: (() => void) | null = null;
+    void listen("accounts-changed", () => callback()).then((nextUnlisten) => {
+      if (disposed) nextUnlisten();
+      else unlisten = nextUnlisten;
+    });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }
+};

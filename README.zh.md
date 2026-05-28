@@ -2,7 +2,7 @@
 
 中文 · [English](./README.md)
 
-一款仅限本地的 macOS/Windows 桌面应用，通过管理 `auth.json` 配置文件和可选的 API 密钥配置文件，实现 OpenAI Codex 账户的快速切换。
+一款仅限本地的 macOS/Windows Tauri 桌面应用，通过管理 `auth.json` 配置文件和可选的 API 密钥配置文件，实现 OpenAI Codex 账户的快速切换。
 
 ---
 
@@ -16,8 +16,8 @@
 - **托盘 / 菜单栏快速切换** — 无需打开主窗口即可切换账户。
 - **深色 / 浅色主题** — 跟随系统偏好，也可在标题栏手动切换。
 - **中英文界面** — 标题栏语言切换按钮，偏好设置本地保存。
-- **完全本地** — 无网络请求，无云同步。所有数据存储于 `~/.auth-switch/auth-switch.db`（SQLite）。
-- **Token 刷新安全** — 切换账户前，应用会回读当前的 `auth.json` 并更新数据库，确保 Codex Token 刷新不丢失。
+- **完全本地的 Tauri 后端** — 无网络请求，无应用内更新检查，无云同步。所有数据存储于 `~/.auth-switch/auth-switch.db`（SQLite）。
+- **Token 刷新安全** — 切换普通 auth 账户前，应用会回读当前的 `auth.json` 并更新数据库，确保 Codex Token 刷新不丢失。
 
 ---
 
@@ -26,16 +26,18 @@
 | 平台 | 架构 | 状态 |
 |------|------|------|
 | macOS | Apple Silicon (arm64) | ✅ 提供 DMG |
-| macOS | Intel (x64) | 源码构建 |
-| Windows | x64 | 源码构建 |
+| macOS | Intel (x64) | 源码构建 / CI 发布 |
+| Windows | x64 | CI 发布 NSIS 安装包 |
 
 > **macOS 未签名构建：** 首次启动可能需要右键 → 打开，或在**系统设置 → 隐私与安全性**中允许该应用。
+>
+> **Windows 前置要求：** 需要 WebView2 Runtime。多数新版 Windows 已内置；如果应用无法启动，请从 Microsoft 安装。
 
 ---
 
 ## 安装（macOS 预构建 DMG）
 
-1. 从 `release/` 目录下载 `auth-switch-0.1.0-arm64.dmg`。
+1. 从 `release/` 目录或 GitHub Actions 发布产物下载 `auth-switch-0.1.8-arm64.dmg`。
 2. 打开 DMG，将 **auth-switch** 拖入 Applications（应用程序）文件夹。
 3. 启动应用；首次运行时会询问是否导入已有的 `~/.codex/auth.json`。
 
@@ -51,18 +53,19 @@
 
 ### 切换账户
 点击账户列表中任意账户旁的 **切换** 按钮，应用将：
-1. 回读当前的 `~/.codex/auth.json` 并更新数据库（防止 Token 丢失）。
+1. 对普通 auth 配置回读当前的 `~/.codex/auth.json` 并更新数据库（防止 Token 丢失）。
 2. 将所选账户存储的 `auth.json` 以原子方式写入 `~/.codex/auth.json`。
+3. 仅对 API 密钥配置文件，在 `~/.codex/config.toml` 中更新单个受管理的顶层 `openai_base_url` 行。
 
 ### 添加 API 密钥配置文件
 点击标题栏中的 **添加 API**，填写名称、Base URL 和 API 密钥。应用将：
 - 写入 API 密钥格式的 `auth.json`（`{ "auth_mode": "apikey", "OPENAI_API_KEY": "..." }`）。
 - 仅在 `~/.codex/config.toml` 中添加或更新 `openai_base_url = "..."` 一行。
 
-切换回普通 auth 账户时，该 `openai_base_url` 行会被注释掉，而不是直接删除。
+切换回普通 auth 账户时，auth-switch 管理的 `openai_base_url` 行会被注释掉，而不是删除无关配置。
 
 ### 托盘 / 菜单栏
-托盘菜单支持切换账户、打开主窗口、添加 auth 文件以及退出应用，无需打开主窗口。
+托盘菜单支持切换账户、打开主窗口、添加 auth 文件以及退出应用，无需打开主窗口。它使用单色系统托盘 / 菜单栏图标，并为 **打开窗口**（macOS 为 `Command+,`，Windows 为 `Ctrl+W`）和 **退出**（macOS 为 `Command+Q`，Windows 为 `Ctrl+Q`）显示快捷键。关闭主窗口后 auth-switch 会继续留在托盘 / 菜单栏中；请使用 **退出** 来结束应用。
 
 ### 重命名 / 删除
 使用账户行内的按钮进行重命名或删除操作。
@@ -76,7 +79,7 @@ ${CODEX_HOME:-$HOME/.codex}/auth.json
 ```
 通常为：`~/.codex/auth.json`
 
-应用只读写此路径，不修改其他 Codex 配置。
+应用只读写这个 Codex 官方路径。不支持自定义 Codex 路径，也不会重写 provider 表、MCP、profiles、sandbox 或其他 Codex 配置段。
 
 ---
 
@@ -85,6 +88,10 @@ ${CODEX_HOME:-$HOME/.codex}/auth.json
 ### 环境要求
 - Node.js ≥ 20
 - pnpm ≥ 9
+- Rust stable（推荐使用 `rustup`）
+- Tauri v2 平台前置依赖
+- macOS：Xcode Command Line Tools
+- Windows：Microsoft C++ Build Tools 和 WebView2 Runtime
 
 ### 安装依赖
 ```bash
@@ -95,39 +102,50 @@ pnpm install
 ```bash
 pnpm dev
 ```
+该命令会启动 Vite 并打开 Tauri v2 应用。
 
 ### 类型检查
 ```bash
 pnpm typecheck
 ```
 
-### 生产构建
+### Rust 检查
+```bash
+cargo check --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml
+```
+
+### 生产构建（不生成安装包）
 ```bash
 pnpm build
 ```
 
-### 打包（DMG / NSIS 安装包）
+### 打包
 ```bash
-pnpm dist
+pnpm dist        # 所有已配置安装包
+pnpm dist:mac    # macOS DMG
+pnpm dist:win    # Windows NSIS 安装包
 ```
 
-DMG 文件将输出至 `release/auth-switch-<version>-arm64.dmg`。
+Tauri 打包产物位于 `src-tauri/target/release/bundle/`。macOS 脚本还会把最新 DMG 复制到 `release/auth-switch-<version>-<arch>.dmg`，以兼容发布和 Homebrew 流程，并输出文件大小和 SHA256。
+
+GitHub Release 应通过 GitHub Actions 发布，优先使用 `.github/workflows/manual-release.yml`。
 
 ---
 
 ## 项目结构
 
 ```
+src-tauri/       # Tauri v2 Rust 后端
+  src/           # commands、托盘、对话框、通知、SQLite、Codex 服务
+  capabilities/  # Tauri v2 权限
+  icons/         # Tauri 打包图标
 src/
-  main/          # Electron 主进程（IPC、托盘、窗口、Codex 服务）
-    codex/       # auth.json 读写、config.toml 管理
-    db/          # SQLite 数据库层
-    services/    # 账户切换逻辑
   renderer/      # React UI
+    api/         # 类型化 Tauri invoke/listen 适配器
     components/  # AccountList、AccountRow、各对话框等
     hooks/       # useAccounts、useTheme
     i18n/        # i18next 配置 + en.json / zh.json 语言文件
-  preload/       # contextBridge API 暴露
   shared/        # 共享 TypeScript 类型
 plans/           # 代理生成的实现计划
 ```
@@ -140,7 +158,7 @@ plans/           # 代理生成的实现计划
 |------|------|
 | 账户数据库 | `~/.auth-switch/auth-switch.db` |
 | 当前 Codex auth | `~/.codex/auth.json` |
-| Codex 配置（仅 URL） | `~/.codex/config.toml` |
+| Codex 配置（仅 URL 行） | `~/.codex/config.toml` |
 
 ---
 

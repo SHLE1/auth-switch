@@ -23,19 +23,17 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --frozen-lockfile
 
-      - name: Rebuild package install scripts
-        run: pnpm rebuild electron esbuild better-sqlite3
+      - name: Check Rust backend
+        run: cargo check --manifest-path src-tauri/Cargo.toml
 
-      - name: Build macOS artifacts
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: pnpm run build && pnpm exec electron-builder --mac --x64 --arm64 --publish never
-
-      - name: Verify packaged macOS runtime
-        run: node scripts/verify-packaged-runtime.cjs release
+      - name: Build macOS DMG
+        run: pnpm run dist:mac
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -43,9 +41,7 @@ jobs:
           name: auth-switch-macos-unsigned-${{ github.run_number }}
           path: |
             release/*.dmg
-            release/*.zip
-            release/latest-mac.yml
-            release/*.blockmap
+            src-tauri/target/release/bundle/dmg/*.dmg
 
   build-windows:
     name: Build Windows unsigned artifacts
@@ -66,25 +62,21 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --frozen-lockfile
 
-      - name: Rebuild package install scripts
-        run: pnpm rebuild electron esbuild better-sqlite3
+      - name: Check Rust backend
+        run: cargo check --manifest-path src-tauri/Cargo.toml
 
-      - name: Build Windows artifacts
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: pnpm run build && pnpm exec electron-builder --win --x64 --publish never
-
-      - name: Verify packaged Windows runtime
-        run: node scripts/verify-packaged-runtime.cjs release
+      - name: Build Windows NSIS installer
+        run: pnpm run dist:win
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: auth-switch-windows-unsigned-${{ github.run_number }}
           path: |
-            release/*.exe
-            release/latest.yml
-            release/*.blockmap
+            src-tauri/target/release/bundle/nsis/*.exe

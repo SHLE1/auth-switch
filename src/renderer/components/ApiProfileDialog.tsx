@@ -19,7 +19,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import type { CodexApiProfileInput } from "../types";
+import type { CodexApiProfileInput } from "../../shared/types";
 
 interface ApiProfileDialogProps {
   onCancel: () => void;

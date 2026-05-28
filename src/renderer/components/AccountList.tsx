@@ -1,6 +1,6 @@
 import { FileKey } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Account } from "../types";
+import type { Account } from "../../shared/types";
 import { AccountRow } from "./AccountRow";
 
 interface AccountListProps {

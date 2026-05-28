@@ -10,6 +10,7 @@ dist-electron/
 build/
 out/
 release/
+src-tauri/target/
 
 # Electron / packaging
 *.asar

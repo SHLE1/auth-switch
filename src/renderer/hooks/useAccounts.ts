@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getErrorMessage } from "../../shared/errors";
-import type { Account } from "../types";
+import { authSwitch } from "../api/authSwitch";
+import type { Account } from "../../shared/types";
 
 export function useAccounts(): {
   accounts: Account[];
@@ -17,7 +18,7 @@ export function useAccounts(): {
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
-      const nextAccounts = await window.authSwitch.getAccounts();
+      const nextAccounts = await authSwitch.getAccounts();
       setAccounts(nextAccounts);
       setError(null);
     } catch (error) {
@@ -29,7 +30,7 @@ export function useAccounts(): {
 
   useEffect(() => {
     void refresh();
-    return window.authSwitch.onAccountsChanged(() => {
+    return authSwitch.onAccountsChanged(() => {
       void refresh();
     });
   }, [refresh]);
