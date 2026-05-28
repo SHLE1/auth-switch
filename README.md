@@ -2,7 +2,7 @@
 
 [中文](./README.zh.md) · English
 
-A local-only macOS/Windows Tauri desktop app for switching OpenAI Codex accounts by managing `auth.json` profiles and optional API-key profiles.
+A local-only macOS/Windows Tauri desktop app for switching Codex accounts and Claude Code API-key profiles by managing each tool's official local config files.
 
 ---
 
@@ -12,7 +12,8 @@ A local-only macOS/Windows Tauri desktop app for switching OpenAI Codex accounts
 - **Multiple account import** — import Codex `auth.json` by choosing a local file or pasting JSON content manually.
 - **Auto-detect email** — parses account email from `auth.json` automatically.
 - **Custom display names** — rename any account to something memorable.
-- **API-key profiles** — add any OpenAI-compatible endpoint manually; manages only the `openai_base_url` line in `~/.codex/config.toml`.
+- **API-key profiles** — add OpenAI-compatible endpoints (e.g. AiHubMix, custom proxies); manages only the `openai_base_url` line in `~/.codex/config.toml`.
+- **Claude Code API profiles** — add and switch Claude Code API-key profiles by writing `~/.claude/settings.json`.
 - **Tray / menu-bar quick switcher** — switch accounts without opening the main window.
 - **Dark / light theme** — follows system preference; toggleable in the header.
 - **English / Simplified Chinese UI** — language toggle in the header, preference saved locally.
@@ -57,15 +58,23 @@ Click **Switch** next to any account in the list. The app:
 2. Atomically writes the selected account's stored `auth.json` to `~/.codex/auth.json`.
 3. For API-key profiles only, updates the single managed top-level `openai_base_url` line in `~/.codex/config.toml`.
 
-### Add an API-key profile
-Click **Add API** in the header. Provide a name, Base URL, and API key manually. The app will:
+### Add a Codex API-key profile
+Click **Add API** in the Codex tab. Provide a name, base URL, and API key. The app will:
 - Write an API-key-shaped `auth.json` (`{ "auth_mode": "apikey", "OPENAI_API_KEY": "..." }`).
 - Add or update only `openai_base_url = "..."` in `~/.codex/config.toml`.
 
 Switching back to a normal auth account comments out the auth-switch-managed `openai_base_url` line rather than deleting unrelated config.
 
+### Add a Claude Code API profile
+Switch to the **Claude Code** tab and click **Add Claude API**. Provide a name, auth token, optional base URL, and optional Haiku / Sonnet / Opus model mappings. The app writes the selected profile to `~/.claude/settings.json` when you switch to it.
+
+Claude Code switching is independent from Codex switching: one current Codex account and one current Claude Code profile can be active at the same time.
+
+### Switch account or profile
+Click **Switch** next to any account/profile in the active tab. For Codex, the app updates `~/.codex/auth.json` and, for API-key profiles, the managed `openai_base_url` line. For Claude Code, the app reads back the current live `~/.claude/settings.json` before switching, then atomically writes the selected profile to that file.
+
 ### Tray / menu bar
-The tray menu lets you switch accounts, open the main window, add an auth file, and quit without opening the window. It uses the monochrome system tray/menu-bar icon and shows shortcuts for **Open Window** (`Command+,` on macOS, `Ctrl+W` on Windows) and **Quit** (`Command+Q` on macOS, `Ctrl+Q` on Windows). Closing the main window keeps auth-switch running in the tray/menu bar; use **Quit** to exit.
+The tray menu lets you switch Codex accounts and Claude Code profiles, open the main window, add a Codex auth file, and quit without opening the window. It uses the monochrome system tray/menu-bar icon and shows shortcuts for **Open Window** (`Command+,` on macOS, `Ctrl+W` on Windows) and **Quit** (`Command+Q` on macOS, `Ctrl+Q` on Windows). Closing the main window keeps auth-switch running in the tray/menu bar; use **Quit** to exit.
 
 ### Rename / Delete
 Right-click or use the inline buttons on any account row.
@@ -80,6 +89,14 @@ ${CODEX_HOME:-$HOME/.codex}/auth.json
 Normally: `~/.codex/auth.json`
 
 The app only reads and writes this official Codex path. It never supports custom Codex paths and never rewrites provider tables, MCP, profiles, sandbox, or other Codex configuration sections.
+
+## Claude Code settings path
+
+```
+~/.claude/settings.json
+```
+
+Claude Code API profiles are stored as `env` settings containing `ANTHROPIC_AUTH_TOKEN`, plus optional `ANTHROPIC_BASE_URL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, and `ANTHROPIC_DEFAULT_OPUS_MODEL`. auth-switch only writes this official Claude Code settings file.
 
 ---
 
@@ -158,6 +175,7 @@ plans/           # agent-generated implementation plans
 |------|----------|
 | Account database | `~/.auth-switch/auth-switch.db` |
 | Live Codex auth | `~/.codex/auth.json` |
+| Live Claude Code settings | `~/.claude/settings.json` |
 | Codex config (URL line only) | `~/.codex/config.toml` |
 
 ---

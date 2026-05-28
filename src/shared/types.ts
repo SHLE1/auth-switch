@@ -1,5 +1,6 @@
 export interface Account {
   id: string;
+  app: "codex" | "claude";
   name: string;
   email: string | null;
   kind: "auth_json" | "api_key";
@@ -11,11 +12,30 @@ export interface Account {
   last_used_at: number | null;
 }
 
+export interface ProfileEditData {
+  name: string;
+  apiKey: string;
+  baseUrl: string;
+  haikuModel: string;
+  sonnetModel: string;
+  opusModel: string;
+}
+
 export interface CodexApiProfileInput {
   name: string;
   apiKey: string;
   baseUrl: string;
   model?: string;
+}
+
+export interface ClaudeProfileInput {
+  name: string;
+  apiKey: string;
+  apiKeyField?: "ANTHROPIC_AUTH_TOKEN" | "ANTHROPIC_API_KEY";
+  baseUrl?: string;
+  haikuModel?: string;
+  sonnetModel?: string;
+  opusModel?: string;
 }
 
 export interface SwitchResult {
@@ -41,6 +61,11 @@ export interface LiveAuthStatus {
   path: string;
 }
 
+export interface LiveClaudeStatus {
+  exists: boolean;
+  path: string;
+}
+
 export interface AuthSwitchApi {
   getAccounts(): Promise<Account[]>;
   getCurrentAccount(): Promise<Account | null>;
@@ -48,6 +73,7 @@ export interface AuthSwitchApi {
   importAuthFile(): Promise<ImportResult>;
   importAuthJsonContent(content: string): Promise<ImportResult>;
   createApiProfile(input: CodexApiProfileInput): Promise<ImportResult>;
+  createClaudeProfile(input: ClaudeProfileInput): Promise<ImportResult>;
   importLiveAuthFile(name?: string, setCurrent?: boolean): Promise<ImportResult>;
   renameAccount(id: string, name: string): Promise<void>;
   deleteAccount(id: string): Promise<void>;
@@ -55,6 +81,10 @@ export interface AuthSwitchApi {
   nativeMessage(title: string, message: string, buttonLabel: string): Promise<void>;
   setLanguage(locale: string): Promise<void>;
   getLiveAuthStatus(): Promise<LiveAuthStatus>;
+  getLiveClaudeStatus(): Promise<LiveClaudeStatus>;
+  getProfileEditData(id: string): Promise<ProfileEditData>;
+  updateApiProfile(id: string, input: CodexApiProfileInput): Promise<ImportResult>;
+  updateClaudeProfile(id: string, input: ClaudeProfileInput): Promise<ImportResult>;
   dismissFirstRun(): Promise<void>;
   shouldShowFirstRun(): Promise<boolean>;
   onAccountsChanged(callback: () => void): () => void;

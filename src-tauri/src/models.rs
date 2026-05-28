@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize)]
 pub struct Account {
     pub id: String,
+    pub app: String,
     pub name: String,
     pub email: Option<String>,
     pub kind: AccountKind,
@@ -45,6 +46,19 @@ pub struct CodexApiProfileInput {
     pub api_key: String,
     pub base_url: String,
     pub model: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClaudeProfileInput {
+    pub name: String,
+    pub api_key: String,
+    #[allow(dead_code)]
+    pub api_key_field: Option<String>,
+    pub base_url: Option<String>,
+    pub haiku_model: Option<String>,
+    pub sonnet_model: Option<String>,
+    pub opus_model: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -157,4 +171,25 @@ pub struct LiveAuthStatus {
     pub hash: Option<String>,
     pub email: Option<String>,
     pub path: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveClaudeStatus {
+    pub exists: bool,
+    pub path: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileEditData {
+    pub name: String,
+    pub api_key: String,
+    pub base_url: String,
+    /// Haiku model alias (Claude profiles only; empty string if absent)
+    pub haiku_model: String,
+    /// Sonnet model alias (Claude profiles only; empty string if absent)
+    pub sonnet_model: String,
+    /// Opus model alias (Claude profiles only; empty string if absent)
+    pub opus_model: String,
 }

@@ -1,5 +1,5 @@
 use crate::accounts_service::AccountsService;
-use crate::models::{Account, CodexApiProfileInput, ImportResult, LiveAuthStatus, SwitchResult};
+use crate::models::{Account, ClaudeProfileInput, CodexApiProfileInput, ImportResult, LiveAuthStatus, LiveClaudeStatus, ProfileEditData, SwitchResult};
 use tauri::{AppHandle, Emitter, Manager, State};
 
 #[tauri::command]
@@ -62,6 +62,16 @@ pub fn create_api_profile(app: AppHandle, service: State<'_, AccountsService>, i
 }
 
 #[tauri::command]
+pub fn create_claude_profile(app: AppHandle, service: State<'_, AccountsService>, input: ClaudeProfileInput) -> ImportResult {
+    let result = service.create_claude_profile(input);
+    if result.success {
+        crate::tray::rebuild_tray_menu(&app, &service);
+        let _ = app.emit("accounts-changed", ());
+    }
+    result
+}
+
+#[tauri::command]
 pub fn import_live_auth_file(
     app: AppHandle,
     service: State<'_, AccountsService>,
@@ -114,6 +124,11 @@ pub fn get_live_auth_status(service: State<'_, AccountsService>) -> LiveAuthStat
 }
 
 #[tauri::command]
+pub fn get_live_claude_status(service: State<'_, AccountsService>) -> LiveClaudeStatus {
+    service.get_live_claude_status()
+}
+
+#[tauri::command]
 pub fn dismiss_first_run(service: State<'_, AccountsService>) -> Result<(), String> {
     service.set_bool_setting("first_run_done", true)
 }
@@ -128,4 +143,27 @@ pub fn set_language(app: AppHandle, service: State<'_, AccountsService>, locale:
     service.set_locale(&locale)?;
     crate::tray::rebuild_tray_menu(&app, &service);
     Ok(())
+}
+
+#[tauri::command]
+pub fn get_profile_edit_data(service: State<'_, AccountsService>, id: String) -> Result<ProfileEditData, String> {
+    service.get_profile_edit_data(&id)
+}
+
+#[tauri::command]
+pub fn update_api_profile(app: AppHandle, service: State<'_, AccountsService>, id: String, input: CodexApiProfileInput) -> ImportResult {
+    let result = service.update_api_profile(&id, input);
+    if result.success {
+        let _ = app.emit("accounts-changed", ());
+    }
+    result
+}
+
+#[tauri::command]
+pub fn update_claude_profile(app: AppHandle, service: State<'_, AccountsService>, id: String, input: ClaudeProfileInput) -> ImportResult {
+    let result = service.update_claude_profile(&id, input);
+    if result.success {
+        let _ = app.emit("accounts-changed", ());
+    }
+    result
 }

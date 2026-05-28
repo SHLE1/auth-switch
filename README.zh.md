@@ -2,7 +2,7 @@
 
 中文 · [English](./README.md)
 
-一款仅限本地的 macOS/Windows Tauri 桌面应用，通过管理 `auth.json` 配置文件和可选的 API 密钥配置文件，实现 OpenAI Codex 账户的快速切换。
+一款仅限本地的 macOS/Windows Tauri 桌面应用，通过管理 Codex 与 Claude Code 的官方本地配置文件，实现 Codex 账户和 Claude Code API 密钥配置文件的快速切换。
 
 ---
 
@@ -12,7 +12,8 @@
 - **多账户导入** — 可通过选择本地文件或手动粘贴 JSON 内容导入 Codex `auth.json`。
 - **自动识别邮箱** — 自动从 `auth.json` 中解析账户邮箱。
 - **自定义显示名称** — 为任意账户设置便于记忆的名称。
-- **API 密钥配置文件** — 手动添加任意 OpenAI 兼容端点，仅管理 `~/.codex/config.toml` 中的 `openai_base_url` 一行。
+- **API 密钥配置文件** — 支持添加 OpenAI 兼容的自定义端点（如 AiHubMix、自建代理等），仅管理 `~/.codex/config.toml` 中的 `openai_base_url` 一行。
+- **Claude Code API 配置文件** — 支持添加并切换 Claude Code API 密钥配置文件，写入 `~/.claude/settings.json`。
 - **托盘 / 菜单栏快速切换** — 无需打开主窗口即可切换账户。
 - **深色 / 浅色主题** — 跟随系统偏好，也可在标题栏手动切换。
 - **中英文界面** — 标题栏语言切换按钮，偏好设置本地保存。
@@ -57,15 +58,23 @@
 2. 将所选账户存储的 `auth.json` 以原子方式写入 `~/.codex/auth.json`。
 3. 仅对 API 密钥配置文件，在 `~/.codex/config.toml` 中更新单个受管理的顶层 `openai_base_url` 行。
 
-### 添加 API 密钥配置文件
-点击标题栏中的 **添加 API**，手动填写名称、Base URL 和 API 密钥。应用将：
+### 添加 Codex API 密钥配置文件
+点击 Codex 标签页中的 **添加 API**，填写名称、Base URL 和 API 密钥。应用将：
 - 写入 API 密钥格式的 `auth.json`（`{ "auth_mode": "apikey", "OPENAI_API_KEY": "..." }`）。
 - 仅在 `~/.codex/config.toml` 中添加或更新 `openai_base_url = "..."` 一行。
 
 切换回普通 auth 账户时，auth-switch 管理的 `openai_base_url` 行会被注释掉，而不是删除无关配置。
 
+### 添加 Claude Code API 配置文件
+切换到 **Claude Code** 标签页并点击 **添加 Claude API**。填写名称、Auth Token，以及可选的 Base URL、Haiku / Sonnet / Opus 模型映射。切换到该配置文件时，应用会将它写入 `~/.claude/settings.json`。
+
+Claude Code 切换与 Codex 切换互不影响：可以同时存在一个当前 Codex 账户和一个当前 Claude Code 配置文件。
+
+### 切换账户或配置文件
+点击当前标签页中任意账户 / 配置文件旁的 **切换**。Codex 会更新 `~/.codex/auth.json`，API 密钥配置文件还会更新受管理的 `openai_base_url` 行。Claude Code 会先回读当前实时 `~/.claude/settings.json`，再将所选配置文件原子写入该文件。
+
 ### 托盘 / 菜单栏
-托盘菜单支持切换账户、打开主窗口、添加 auth 文件以及退出应用，无需打开主窗口。它使用单色系统托盘 / 菜单栏图标，并为 **打开窗口**（macOS 为 `Command+,`，Windows 为 `Ctrl+W`）和 **退出**（macOS 为 `Command+Q`，Windows 为 `Ctrl+Q`）显示快捷键。关闭主窗口后 auth-switch 会继续留在托盘 / 菜单栏中；请使用 **退出** 来结束应用。
+托盘菜单支持切换 Codex 账户和 Claude Code 配置文件、打开主窗口、添加 Codex auth 文件以及退出应用，无需打开主窗口。它使用单色系统托盘 / 菜单栏图标，并为 **打开窗口**（macOS 为 `Command+,`，Windows 为 `Ctrl+W`）和 **退出**（macOS 为 `Command+Q`，Windows 为 `Ctrl+Q`）显示快捷键。关闭主窗口后 auth-switch 会继续留在托盘 / 菜单栏中；请使用 **退出** 来结束应用。
 
 ### 重命名 / 删除
 使用账户行内的按钮进行重命名或删除操作。
@@ -80,6 +89,14 @@ ${CODEX_HOME:-$HOME/.codex}/auth.json
 通常为：`~/.codex/auth.json`
 
 应用只读写这个 Codex 官方路径。不支持自定义 Codex 路径，也不会重写 provider 表、MCP、profiles、sandbox 或其他 Codex 配置段。
+
+## Claude Code settings 文件路径
+
+```
+~/.claude/settings.json
+```
+
+Claude Code API 配置文件以 `env` settings 形式保存，包含 `ANTHROPIC_AUTH_TOKEN`，以及可选的 `ANTHROPIC_BASE_URL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL` 和 `ANTHROPIC_DEFAULT_OPUS_MODEL`。auth-switch 只写入这个 Claude Code 官方 settings 文件。
 
 ---
 
@@ -158,6 +175,7 @@ plans/           # 代理生成的实现计划
 |------|------|
 | 账户数据库 | `~/.auth-switch/auth-switch.db` |
 | 当前 Codex auth | `~/.codex/auth.json` |
+| 当前 Claude Code settings | `~/.claude/settings.json` |
 | Codex 配置（仅 URL 行） | `~/.codex/config.toml` |
 
 ---

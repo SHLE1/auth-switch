@@ -5,7 +5,10 @@ import type { Account } from "../../shared/types";
 
 export function useAccounts(): {
   accounts: Account[];
-  current: Account | null;
+  codexAccounts: Account[];
+  claudeAccounts: Account[];
+  codexCurrent: Account | null;
+  claudeCurrent: Account | null;
   loading: boolean;
   error: string | null;
   setError: (error: string | null) => void;
@@ -35,7 +38,26 @@ export function useAccounts(): {
     });
   }, [refresh]);
 
-  const current = useMemo(() => accounts.find((account) => account.is_current) ?? null, [accounts]);
+  const codexAccounts = useMemo(() => accounts.filter((account) => account.app === "codex"), [accounts]);
+  const claudeAccounts = useMemo(() => accounts.filter((account) => account.app === "claude"), [accounts]);
+  const codexCurrent = useMemo(
+    () => codexAccounts.find((account) => account.is_current) ?? null,
+    [codexAccounts]
+  );
+  const claudeCurrent = useMemo(
+    () => claudeAccounts.find((account) => account.is_current) ?? null,
+    [claudeAccounts]
+  );
 
-  return { accounts, current, loading, error, setError, refresh };
+  return {
+    accounts,
+    codexAccounts,
+    claudeAccounts,
+    codexCurrent,
+    claudeCurrent,
+    loading,
+    error,
+    setError,
+    refresh
+  };
 }
