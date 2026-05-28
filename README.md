@@ -37,7 +37,7 @@ A local-only macOS/Windows Tauri desktop app for switching OpenAI Codex accounts
 
 ## Install (macOS, pre-built DMG)
 
-1. Download `auth-switch-0.1.8-arm64.dmg` from the `release/` folder or GitHub Actions release artifacts.
+1. Download `auth-switch-1.0.0-arm64.dmg` from the `release/` folder or GitHub Actions release artifacts.
 2. Open the DMG and drag **auth-switch** to Applications.
 3. Launch the app; on first run it will offer to import your existing `~/.codex/auth.json`.
 

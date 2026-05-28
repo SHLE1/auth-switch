@@ -37,7 +37,7 @@
 
 ## 安装（macOS 预构建 DMG）
 
-1. 从 `release/` 目录或 GitHub Actions 发布产物下载 `auth-switch-0.1.8-arm64.dmg`。
+1. 从 `release/` 目录或 GitHub Actions 发布产物下载 `auth-switch-1.0.0-arm64.dmg`。
 2. 打开 DMG，将 **auth-switch** 拖入 Applications（应用程序）文件夹。
 3. 启动应用；首次运行时会询问是否导入已有的 `~/.codex/auth.json`。
 
