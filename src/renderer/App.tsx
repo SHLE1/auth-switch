@@ -6,9 +6,10 @@ import { authSwitch } from "./api/authSwitch";
 import { setLanguage } from "./i18n/index";
 import { useAccounts } from "./hooks/useAccounts";
 import { useTheme } from "./hooks/useTheme";
-import type { Account, CodexApiProfileInput, ImportResult } from "../shared/types";
+import type { Account, ClaudeProfileInput, CodexApiProfileInput, ImportResult } from "../shared/types";
 import { AccountList } from "./components/AccountList";
 import { ApiProfileDialog } from "./components/ApiProfileDialog";
+import { ClaudeProfileDialog } from "./components/ClaudeProfileDialog";
 import { CurrentAccountCard } from "./components/CurrentAccountCard";
 import { FirstRunDialog } from "./components/FirstRunDialog";
 import { ImportButton } from "./components/ImportButton";
@@ -19,10 +20,24 @@ import { cn } from "@/lib/utils";
 
 export default function App(): JSX.Element {
   const { t, i18n } = useTranslation();
-  const { accounts, current, loading, error, setError, refresh } = useAccounts();
+  const {
+    accounts,
+    codexAccounts,
+    claudeAccounts,
+    codexCurrent,
+    claudeCurrent,
+    loading,
+    error,
+    setError,
+    refresh
+  } = useAccounts();
   const { theme, toggle: toggleTheme } = useTheme();
   const [firstRunVisible, setFirstRunVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<"codex" | "claude">("codex");
   const [apiProfileVisible, setApiProfileVisible] = useState(false);
+  const [claudeProfileVisible, setClaudeProfileVisible] = useState(false);
+  const [editApiProfile, setEditApiProfile] = useState<Account | null>(null);
+  const [editClaudeProfile, setEditClaudeProfile] = useState<Account | null>(null);
   const [renameTarget, setRenameTarget] = useState<Account | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
@@ -109,7 +124,7 @@ export default function App(): JSX.Element {
     try {
       const confirmed = await authSwitch.nativeConfirm(
         t("deleteDialog.title"),
-        t("deleteDialog.confirm", { name: account.name }),
+        t(account.app === "claude" ? "deleteDialog.confirmClaude" : "deleteDialog.confirm", { name: account.name }),
         t("common.delete"),
         t("common.cancel")
       );
@@ -134,6 +149,60 @@ export default function App(): JSX.Element {
     }
   }
 
+  async function handleCreateClaudeProfile(input: ClaudeProfileInput): Promise<void> {
+    try {
+      const result = await authSwitch.createClaudeProfile(input);
+      if (!result.success) {
+        showError(result.error ?? t("error.saveClaudeProfileFailed"));
+        return;
+      }
+      setClaudeProfileVisible(false);
+      showNotice(t("notice.savedClaudeProfile", { name: result.account?.name ?? input.name }));
+      await refresh();
+    } catch (error) {
+      showError(getErrorMessage(error));
+    }
+  }
+
+  async function handleUpdateApiProfile(input: CodexApiProfileInput): Promise<void> {
+    if (!editApiProfile) return;
+    try {
+      const result = await authSwitch.updateApiProfile(editApiProfile.id, input);
+      if (!result.success) {
+        showError(result.error ?? t("error.updateApiProfileFailed"));
+        return;
+      }
+      setEditApiProfile(null);
+      showNotice(t("notice.updatedApiProfile", { name: result.account?.name ?? input.name }));
+      await refresh();
+    } catch (error) {
+      showError(getErrorMessage(error));
+    }
+  }
+
+  async function handleUpdateClaudeProfile(input: ClaudeProfileInput): Promise<void> {
+    if (!editClaudeProfile) return;
+    try {
+      const result = await authSwitch.updateClaudeProfile(editClaudeProfile.id, input);
+      if (!result.success) {
+        showError(result.error ?? t("error.updateClaudeProfileFailed"));
+        return;
+      }
+      setEditClaudeProfile(null);
+      showNotice(t("notice.updatedClaudeProfile", { name: result.account?.name ?? input.name }));
+      await refresh();
+    } catch (error) {
+      showError(getErrorMessage(error));
+    }
+  }
+
+  function handleEditAccount(account: Account): void {
+    if (account.app === "claude") {
+      setEditClaudeProfile(account);
+    } else {
+      setEditApiProfile(account);
+    }
+  }
   function handleImported(result: ImportResult): void {
     const duplicateNote = result.duplicate ? t("notice.duplicateIgnored") : "";
     const sameEmailNote = result.sameEmailExists ? t("notice.sameEmailExists") : "";
@@ -149,6 +218,8 @@ export default function App(): JSX.Element {
   const dragRegionStyle = { WebkitAppRegion: "drag" } as CSSProperties;
   const noDragRegionStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
   const isMac = /Macintosh/.test(navigator.userAgent);
+  const activeAccounts = activeTab === "claude" ? claudeAccounts : codexAccounts;
+  const activeCurrent = activeTab === "claude" ? claudeCurrent : codexCurrent;
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-background">
@@ -209,7 +280,35 @@ export default function App(): JSX.Element {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        <CurrentAccountCard account={current} />
+        <div style={noDragRegionStyle} className="mb-4 flex rounded-md border overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setActiveTab("codex")}
+            className={cn(
+              "h-8 flex-1 rounded-none font-mono text-xs",
+              activeTab === "codex" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+            )}
+          >
+            {t("tabs.codex")}
+          </Button>
+          <Separator orientation="vertical" className="h-8" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setActiveTab("claude")}
+            className={cn(
+              "h-8 flex-1 rounded-none font-mono text-xs",
+              activeTab === "claude" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+            )}
+          >
+            {t("tabs.claude")}
+          </Button>
+        </div>
+
+        <CurrentAccountCard account={activeCurrent} app={activeTab} />
 
         {(error ?? notice) && (
           <div
@@ -229,22 +328,37 @@ export default function App(): JSX.Element {
           <div className="mb-2.5 flex items-center justify-between">
             <h2 className="mono-label text-[10px] text-muted-foreground">{t("app.accounts")}</h2>
             <div style={noDragRegionStyle} className="flex items-center gap-1.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setApiProfileVisible(true)}
-                className="h-7 px-2.5 font-mono text-xs text-muted-foreground"
-              >
-                {t("app.addApi")}
-              </Button>
-              <ImportButton onImported={handleImported} onError={showError} />
+              {activeTab === "codex" ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setApiProfileVisible(true)}
+                    className="h-7 px-2.5 font-mono text-xs text-muted-foreground"
+                  >
+                    {t("app.addApi")}
+                  </Button>
+                  <ImportButton onImported={handleImported} onError={showError} />
+                </>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setClaudeProfileVisible(true)}
+                  className="h-7 px-2.5 font-mono text-xs text-muted-foreground"
+                >
+                  {t("app.addClaudeApi")}
+                </Button>
+              )}
             </div>
           </div>
           <AccountList
-            accounts={accounts}
+            accounts={activeAccounts}
             loading={loading}
             switchingId={switchingId}
+            emptyKey={activeTab === "claude" ? "accountList.claudeEmpty" : "accountList.empty"}
             onSwitch={(account) => void handleSwitch(account)}
+            onEdit={handleEditAccount}
             onRename={setRenameTarget}
             onDelete={(account) => void requestDelete(account)}
           />
@@ -265,10 +379,37 @@ export default function App(): JSX.Element {
         />
       )}
 
-      {apiProfileVisible && (
+      {(apiProfileVisible || editApiProfile) && (
         <ApiProfileDialog
-          onCancel={() => setApiProfileVisible(false)}
-          onSave={(input) => void handleCreateApiProfile(input)}
+          editAccount={editApiProfile ?? undefined}
+          onCancel={() => {
+            setApiProfileVisible(false);
+            setEditApiProfile(null);
+          }}
+          onSave={(input) => {
+            if (editApiProfile) {
+              void handleUpdateApiProfile(input);
+            } else {
+              void handleCreateApiProfile(input);
+            }
+          }}
+        />
+      )}
+
+      {(claudeProfileVisible || editClaudeProfile) && (
+        <ClaudeProfileDialog
+          editAccount={editClaudeProfile ?? undefined}
+          onCancel={() => {
+            setClaudeProfileVisible(false);
+            setEditClaudeProfile(null);
+          }}
+          onSave={(input) => {
+            if (editClaudeProfile) {
+              void handleUpdateClaudeProfile(input);
+            } else {
+              void handleCreateClaudeProfile(input);
+            }
+          }}
         />
       )}
 

@@ -114,8 +114,31 @@ fn build_menu(app: &AppHandle, service: &AccountsService) -> tauri::menu::Menu<t
 
     match service.list_accounts() {
         Ok(accounts) if !accounts.is_empty() => {
-            for account in accounts {
-                let item = CheckMenuItemBuilder::with_id(format!("switch:{}", account.id), account.name)
+            let mut has_codex = false;
+            let mut has_claude = false;
+
+            for account in accounts.iter().filter(|account| account.app == "codex") {
+                if !has_codex {
+                    builder = builder.item(&MenuItemBuilder::with_id("codex-title", "CODEX").enabled(false).build(app).unwrap());
+                    has_codex = true;
+                }
+                let item = CheckMenuItemBuilder::with_id(format!("switch:{}", account.id), account.name.clone())
+                    .checked(account.is_current)
+                    .enabled(true)
+                    .build(app)
+                    .unwrap();
+                builder = builder.item(&item);
+            }
+
+            for account in accounts.iter().filter(|account| account.app == "claude") {
+                if !has_claude {
+                    if has_codex {
+                        builder = builder.item(&PredefinedMenuItem::separator(app).unwrap());
+                    }
+                    builder = builder.item(&MenuItemBuilder::with_id("claude-title", "CLAUDE CODE").enabled(false).build(app).unwrap());
+                    has_claude = true;
+                }
+                let item = CheckMenuItemBuilder::with_id(format!("switch:{}", account.id), account.name.clone())
                     .checked(account.is_current)
                     .enabled(true)
                     .build(app)
@@ -129,7 +152,7 @@ fn build_menu(app: &AppHandle, service: &AccountsService) -> tauri::menu::Menu<t
     }
 
     builder = builder.item(&PredefinedMenuItem::separator(app).unwrap());
-    builder = builder.item(&MenuItemBuilder::with_id("add-auth", "Add auth.json").build(app).unwrap());
+    builder = builder.item(&MenuItemBuilder::with_id("add-auth", "Add Codex auth.json").build(app).unwrap());
     builder = builder.item(
         &MenuItemBuilder::with_id("open-window", "Open Window")
             .accelerator(open_window_accelerator())

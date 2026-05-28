@@ -86,6 +86,7 @@
 - Use `pnpm` for dependency management and scripts. Do not use `npm install`, `npm run`, or commit `package-lock.json`.
 - Keep implementation plans in the `plans/` folder.
 - Save each agent-generated plan as a separate file in `plans/`.
+- All plans MUST be written as Markdown files inside `/Users/hypered/Github/auth-switch/plans`; do not leave implementation plans only in `local://` artifacts.
 - Build a DMG whenever there is a new feature or fix, without waiting to be asked.
 - After building a DMG, report the path, size, and SHA256. Current release path convention: `release/auth-switch-0.1.0-arm64.dmg`.
 - macOS builds are currently unsigned; mention that users may need right-click/Open or allow the app in Privacy & Security.

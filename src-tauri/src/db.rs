@@ -21,6 +21,7 @@ pub enum DbError {
 #[derive(Debug, Clone)]
 pub struct AccountRow {
     pub id: String,
+    pub app: String,
     pub name: String,
     pub email: Option<String>,
     pub auth_json: String,
@@ -39,6 +40,7 @@ impl AccountRow {
     pub fn into_account(self) -> Account {
         Account {
             id: self.id,
+            app: self.app,
             name: self.name,
             email: self.email,
             kind: self.kind,
@@ -54,6 +56,7 @@ impl AccountRow {
 
 pub struct NewAccountRow {
     pub id: String,
+    pub app: String,
     pub name: String,
     pub email: Option<String>,
     pub auth_json: String,
@@ -70,6 +73,8 @@ pub struct NewAccountRow {
 pub struct Database {
     conn: Mutex<Connection>,
 }
+
+const ACCOUNT_COLUMNS: &str = "id, app, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at";
 
 impl Database {
     pub fn open() -> Result<Self, DbError> {
@@ -94,9 +99,7 @@ impl Database {
 
     pub fn list_accounts(&self) -> Result<Vec<Account>, DbError> {
         let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
-        let mut stmt = conn.prepare(
-            "SELECT id, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at FROM accounts ORDER BY created_at ASC",
-        )?;
+        let mut stmt = conn.prepare(&format!("SELECT {ACCOUNT_COLUMNS} FROM accounts ORDER BY app ASC, created_at ASC"))?;
         let rows = stmt.query_map([], row_to_account_row)?;
         let mut accounts = Vec::new();
         for row in rows {
@@ -105,10 +108,11 @@ impl Database {
         Ok(accounts)
     }
 
+
     pub fn get_account_by_id(&self, id: &str) -> Result<Option<AccountRow>, DbError> {
         let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         conn.query_row(
-            "SELECT id, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at FROM accounts WHERE id = ?1",
+            &format!("SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE id = ?1"),
             params![id],
             row_to_account_row,
         )
@@ -123,8 +127,19 @@ impl Database {
     pub fn get_current_account_row(&self) -> Result<Option<AccountRow>, DbError> {
         let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         conn.query_row(
-            "SELECT id, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at FROM accounts WHERE is_current = 1 ORDER BY last_used_at DESC LIMIT 1",
+            &format!("SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE is_current = 1 ORDER BY last_used_at DESC LIMIT 1"),
             [],
+            row_to_account_row,
+        )
+        .optional()
+        .map_err(DbError::from)
+    }
+
+    pub fn get_current_account_row_for_app(&self, app: &str) -> Result<Option<AccountRow>, DbError> {
+        let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
+        conn.query_row(
+            &format!("SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE app = ?1 AND is_current = 1 ORDER BY last_used_at DESC LIMIT 1"),
+            params![app],
             row_to_account_row,
         )
         .optional()
@@ -135,26 +150,8 @@ impl Database {
         let mut conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         let tx = conn.transaction()?;
         let now = now_ms();
-        tx.execute(
-            "INSERT INTO accounts (
-                id, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at
-              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
-            params![
-                row.id,
-                row.name,
-                row.email,
-                row.auth_json,
-                row.auth_hash,
-                row.kind.as_db_value(),
-                row.base_url,
-                row.model,
-                0i64, // not-current initially; SET below
-                row.created_at,
-                row.updated_at,
-                row.last_used_at
-            ],
-        )?;
-        tx.execute("UPDATE accounts SET is_current = 0", [])?;
+        insert_account_tx(&tx, row, false)?;
+        tx.execute("UPDATE accounts SET is_current = 0 WHERE app = ?1", params![row.app])?;
         tx.execute(
             "UPDATE accounts SET is_current = 1, last_used_at = ?1, updated_at = ?1 WHERE id = ?2",
             params![now, row.id],
@@ -167,10 +164,11 @@ impl Database {
         let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         conn.execute(
             "INSERT INTO accounts (
-                id, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at
-              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                id, app, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at
+              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 row.id,
+                row.app,
                 row.name,
                 row.email,
                 row.auth_json,
@@ -201,6 +199,27 @@ impl Database {
         Ok(())
     }
 
+    /// Replaces auth content and metadata for an existing api_key profile.
+    pub fn update_account_profile(
+        &self,
+        id: &str,
+        name: &str,
+        auth_json: &str,
+        auth_hash: &str,
+        base_url: Option<&str>,
+        model: Option<&str>,
+    ) -> Result<(), DbError> {
+        let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
+        let rows = conn.execute(
+            "UPDATE accounts SET name = ?1, auth_json = ?2, auth_hash = ?3, base_url = ?4, model = ?5, updated_at = ?6 WHERE id = ?7",
+            params![name, auth_json, auth_hash, base_url, model, now_ms(), id],
+        )?;
+        if rows == 0 {
+            return Err(DbError::Sqlite(rusqlite::Error::QueryReturnedNoRows));
+        }
+        Ok(())
+    }
+
     pub fn update_account_live_snapshot(&self, id: &str, auth_json: &str, auth_hash: &str, updated_at: i64) -> Result<(), DbError> {
         let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         conn.execute(
@@ -213,8 +232,9 @@ impl Database {
     pub fn set_current_account(&self, id: &str) -> Result<(), DbError> {
         let mut conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         let tx = conn.transaction()?;
+        let app: String = tx.query_row("SELECT app FROM accounts WHERE id = ?1", params![id], |row| row.get(0))?;
         let now = now_ms();
-        tx.execute("UPDATE accounts SET is_current = 0", [])?;
+        tx.execute("UPDATE accounts SET is_current = 0 WHERE app = ?1", params![app])?;
         tx.execute(
             "UPDATE accounts SET is_current = 1, last_used_at = ?1, updated_at = ?1 WHERE id = ?2",
             params![now, id],
@@ -230,9 +250,17 @@ impl Database {
     }
 
     pub fn auth_hash_exists(&self, hash: &str) -> Result<bool, DbError> {
+        self.auth_hash_exists_for_app("codex", hash)
+    }
+
+    pub fn auth_hash_exists_for_app(&self, app: &str, hash: &str) -> Result<bool, DbError> {
         let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         let exists: Option<i64> = conn
-            .query_row("SELECT 1 FROM accounts WHERE auth_hash = ?1 LIMIT 1", params![hash], |row| row.get(0))
+            .query_row(
+                "SELECT 1 FROM accounts WHERE app = ?1 AND auth_hash = ?2 LIMIT 1",
+                params![app, hash],
+                |row| row.get(0),
+            )
             .optional()?;
         Ok(exists.is_some())
     }
@@ -241,7 +269,7 @@ impl Database {
         let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         let exists: Option<i64> = conn
             .query_row(
-                "SELECT 1 FROM accounts WHERE auth_hash = ?1 AND base_url = ?2 LIMIT 1",
+                "SELECT 1 FROM accounts WHERE app = 'codex' AND auth_hash = ?1 AND base_url = ?2 LIMIT 1",
                 params![hash, base_url],
                 |row| row.get(0),
             )
@@ -252,7 +280,7 @@ impl Database {
     pub fn find_by_email(&self, email: &str) -> Result<Option<AccountRow>, DbError> {
         let conn = self.conn.lock().map_err(|_| DbError::LockPoisoned)?;
         conn.query_row(
-            "SELECT id, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at FROM accounts WHERE email = ?1 LIMIT 1",
+            &format!("SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE app = 'codex' AND email = ?1 LIMIT 1"),
             params![email],
             row_to_account_row,
         )
@@ -297,22 +325,47 @@ pub fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
+fn insert_account_tx(tx: &rusqlite::Transaction<'_>, row: &NewAccountRow, is_current: bool) -> Result<(), DbError> {
+    tx.execute(
+        "INSERT INTO accounts (
+            id, app, name, email, auth_json, auth_hash, kind, base_url, model, is_current, created_at, updated_at, last_used_at
+          ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+        params![
+            row.id,
+            row.app,
+            row.name,
+            row.email,
+            row.auth_json,
+            row.auth_hash,
+            row.kind.as_db_value(),
+            row.base_url,
+            row.model,
+            if is_current { 1 } else { 0 },
+            row.created_at,
+            row.updated_at,
+            row.last_used_at
+        ],
+    )?;
+    Ok(())
+}
+
 fn row_to_account_row(row: &Row<'_>) -> rusqlite::Result<AccountRow> {
-    let kind: String = row.get(5)?;
-    let is_current: i64 = row.get(8)?;
+    let kind: String = row.get(6)?;
+    let is_current: i64 = row.get(9)?;
     Ok(AccountRow {
         id: row.get(0)?,
-        name: row.get(1)?,
-        email: row.get(2)?,
-        auth_json: row.get(3)?,
-        auth_hash: row.get(4)?,
+        app: row.get(1)?,
+        name: row.get(2)?,
+        email: row.get(3)?,
+        auth_json: row.get(4)?,
+        auth_hash: row.get(5)?,
         kind: AccountKind::from_db_value(&kind),
-        base_url: row.get(6)?,
-        model: row.get(7)?,
+        base_url: row.get(7)?,
+        model: row.get(8)?,
         is_current: is_current == 1,
-        created_at: row.get(9)?,
-        updated_at: row.get(10)?,
-        last_used_at: row.get(11)?,
+        created_at: row.get(10)?,
+        updated_at: row.get(11)?,
+        last_used_at: row.get(12)?,
     })
 }
 
@@ -355,6 +408,14 @@ fn run_migrations(conn: &Connection) -> Result<(), DbError> {
             PRAGMA user_version = 3;",
         )?;
     }
+    let version: i64 = conn.pragma_query_value(None, "user_version", |row| row.get(0))?;
+    if version < 4 {
+        conn.execute_batch(
+            "ALTER TABLE accounts ADD COLUMN app TEXT NOT NULL DEFAULT 'codex';
+            CREATE INDEX IF NOT EXISTS idx_accounts_app ON accounts(app);
+            PRAGMA user_version = 4;",
+        )?;
+    }
     Ok(())
 }
 
@@ -391,6 +452,48 @@ mod tests {
         }
         let db = Database::open_at(path).unwrap();
         assert!(db.list_accounts().unwrap().is_empty());
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn current_account_is_scoped_by_app() {
+        let dir = std::env::temp_dir().join(format!("auth-switch-db-app-test-{}", now_ms()));
+        let db = Database::open_at(dir.join("auth-switch.db")).unwrap();
+        let now = now_ms();
+        db.insert_account_set_current(&NewAccountRow {
+            id: "codex-1".into(),
+            app: "codex".into(),
+            name: "Codex".into(),
+            email: None,
+            auth_json: "{}".into(),
+            auth_hash: "codex".into(),
+            kind: AccountKind::AuthJson,
+            base_url: None,
+            model: None,
+            is_current: true,
+            created_at: now,
+            updated_at: now,
+            last_used_at: None,
+        })
+        .unwrap();
+        db.insert_account_set_current(&NewAccountRow {
+            id: "claude-1".into(),
+            app: "claude".into(),
+            name: "Claude".into(),
+            email: None,
+            auth_json: "{}".into(),
+            auth_hash: "claude".into(),
+            kind: AccountKind::ApiKey,
+            base_url: None,
+            model: None,
+            is_current: true,
+            created_at: now,
+            updated_at: now,
+            last_used_at: None,
+        })
+        .unwrap();
+        assert_eq!(db.get_current_account_row_for_app("codex").unwrap().unwrap().id, "codex-1");
+        assert_eq!(db.get_current_account_row_for_app("claude").unwrap().unwrap().id, "claude-1");
         let _ = fs::remove_dir_all(dir);
     }
 }

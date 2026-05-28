@@ -1,4 +1,5 @@
 mod accounts_service;
+mod claude;
 mod codex;
 mod commands;
 mod db;
@@ -29,14 +30,19 @@ pub fn run() {
             commands::switch_account,
             commands::import_auth_file,
             commands::create_api_profile,
+            commands::create_claude_profile,
             commands::import_live_auth_file,
             commands::rename_account,
             commands::delete_account,
             commands::native_confirm,
             commands::native_message,
             commands::get_live_auth_status,
+            commands::get_live_claude_status,
             commands::dismiss_first_run,
             commands::should_show_first_run,
+            commands::get_profile_edit_data,
+            commands::update_api_profile,
+            commands::update_claude_profile,
             commands::set_language
         ])
         .setup(|app| {

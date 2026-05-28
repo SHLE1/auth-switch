@@ -1,4 +1,4 @@
-import { Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Loader2, MoreHorizontal, Pencil, Settings, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface AccountRowProps {
   account: Account;
   switchingId: string | null;
   onSwitch: (account: Account) => void;
+  onEdit?: (account: Account) => void;
   onRename: (account: Account) => void;
   onDelete: (account: Account) => void;
 }
@@ -24,6 +25,7 @@ export function AccountRow({
   account,
   switchingId,
   onSwitch,
+  onEdit,
   onRename,
   onDelete
 }: AccountRowProps): JSX.Element {
@@ -97,6 +99,18 @@ export function AccountRow({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-36">
+                {account.kind === "api_key" && onEdit && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => onEdit(account)}
+                      className="gap-2 font-mono text-xs"
+                    >
+                      <Settings size={12} />
+                      {t("accountRow.edit")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem
                   onClick={() => onRename(account)}
                   className="gap-2 font-mono text-xs"
