@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getErrorMessage } from "../../shared/errors";
-import type { LiveAuthStatus } from "../types";
+import { authSwitch } from "../api/authSwitch";
+import type { LiveAuthStatus } from "../../shared/types";
 
 interface FirstRunDialogProps {
   onDone: () => void;
@@ -26,7 +27,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    window.authSwitch
+    authSwitch
       .getLiveAuthStatus()
       .then((nextStatus) => {
         setStatus(nextStatus);
@@ -37,7 +38,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
 
   async function dismiss(): Promise<void> {
     try {
-      await window.authSwitch.dismissFirstRun();
+      await authSwitch.dismissFirstRun();
       onDone();
     } catch (error) {
       onError(getErrorMessage(error));
@@ -47,7 +48,7 @@ export function FirstRunDialog({ onDone, onError }: FirstRunDialogProps): JSX.El
   async function handleImport(): Promise<void> {
     setBusy(true);
     try {
-      const result = await window.authSwitch.importLiveAuthFile(name, true);
+      const result = await authSwitch.importLiveAuthFile(name, true);
       if (!result.success) {
         onError(result.error ?? t("error.importFailed"));
         return;

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import type { Account } from "../types";
+import type { Account } from "../../shared/types";
 
 interface CurrentAccountCardProps {
   account: Account | null;

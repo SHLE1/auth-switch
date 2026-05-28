@@ -21,6 +21,6 @@
       "@/*": ["./src/renderer/*"]
     }
   },
-  "include": ["electron.vite.config.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "include": ["vite.config.ts", "tailwind.config.ts", "src/renderer/**/*.ts", "src/renderer/**/*.tsx", "src/shared/**/*.ts"],
   "references": []
 }

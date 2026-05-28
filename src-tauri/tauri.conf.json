@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "auth-switch",
+  "version": "0.1.8",
+  "identifier": "com.shle1.authswitch",
+  "build": {
+    "beforeDevCommand": "pnpm vite --host 127.0.0.1",
+    "beforeBuildCommand": "pnpm build:renderer",
+    "devUrl": "http://127.0.0.1:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "auth-switch",
+        "width": 720,
+        "height": 560,
+        "minWidth": 400,
+        "minHeight": 280,
+        "resizable": true,
+        "visible": false,
+        "center": true,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data:; font-src 'self' data:; connect-src 'self' ipc: http://127.0.0.1:1420 ws://127.0.0.1:1420"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "hardenedRuntime": false
+    },
+    "windows": {
+      "nsis": {
+        "displayLanguageSelector": false,
+        "installMode": "currentUser",
+        "languages": ["English", "SimpChinese"]
+      }
+    },
+    "resources": ["../assets/tray-icon.png", "../assets/tray-icon@2x.png"]
+  }
+}

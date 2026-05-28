@@ -32,14 +32,23 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --frozen-lockfile
 
-      - name: Rebuild package install scripts
-        run: pnpm rebuild electron esbuild better-sqlite3
-
-      - name: Typecheck
+      - name: Typecheck renderer
         run: pnpm run typecheck
 
-      - name: Build
+      - name: Check Rust backend
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+
+      - name: Test Rust backend
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Build renderer
+        run: pnpm run build:renderer
+
+      - name: Build Tauri app
         run: pnpm run build

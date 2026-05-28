@@ -79,7 +79,7 @@
 - Call `t("key")` for static strings and `t("key", { name })` for interpolated strings.
 - Key naming convention: `<feature>.<description>` e.g. `firstRun.title`, `common.cancel`, `notice.switchedTo`.
 - Do **not** hardcode UI strings in `.tsx` components — always go through `t()`.
-- Tray/native menu strings (in `src/main/tray.ts`) are system-rendered and do not go through i18n; keep them in English.
+- Tray/native menu strings (in `src-tauri/src/tray.rs`) are system-rendered and do not go through renderer i18n; keep them in English.
 
 ## Repository/process preferences
 

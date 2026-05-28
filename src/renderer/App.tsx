@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { AlertTriangle, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getErrorMessage } from "../shared/errors";
+import { authSwitch } from "./api/authSwitch";
 import { setLanguage } from "./i18n/index";
 import { useAccounts } from "./hooks/useAccounts";
 import { useTheme } from "./hooks/useTheme";
-import type { Account, CodexApiProfileInput, ImportResult } from "./types";
+import type { Account, CodexApiProfileInput, ImportResult } from "../shared/types";
 import { AccountList } from "./components/AccountList";
 import { ApiProfileDialog } from "./components/ApiProfileDialog";
 import { CurrentAccountCard } from "./components/CurrentAccountCard";
@@ -43,7 +44,7 @@ export default function App(): JSX.Element {
   );
 
   useEffect(() => {
-    window.authSwitch
+    authSwitch
       .shouldShowFirstRun()
       .then(setFirstRunVisible)
       .catch((error) => showError(getErrorMessage(error)));
@@ -52,7 +53,7 @@ export default function App(): JSX.Element {
   async function handleSwitch(account: Account): Promise<void> {
     setSwitchingId(account.id);
     try {
-      const result = await window.authSwitch.switchAccount(account.id);
+      const result = await authSwitch.switchAccount(account.id);
       if (!result.success) {
         showError(result.error ?? t("error.switchFailed"));
         return;
@@ -73,7 +74,7 @@ export default function App(): JSX.Element {
   async function handleRename(name: string): Promise<void> {
     if (!renameTarget) return;
     try {
-      await window.authSwitch.renameAccount(renameTarget.id, name);
+      await authSwitch.renameAccount(renameTarget.id, name);
       setRenameTarget(null);
       showNotice(t("notice.renamed", { name }));
       await refresh();
@@ -84,7 +85,7 @@ export default function App(): JSX.Element {
 
   async function handleDelete(account: Account): Promise<void> {
     try {
-      await window.authSwitch.deleteAccount(account.id);
+      await authSwitch.deleteAccount(account.id);
       showNotice(t("notice.deleted", { name: account.name }));
       await refresh();
     } catch (error) {
@@ -95,7 +96,7 @@ export default function App(): JSX.Element {
   async function requestDelete(account: Account): Promise<void> {
     if (account.is_current) {
       try {
-        await window.authSwitch.nativeMessage(
+        await authSwitch.nativeMessage(
           t("deleteDialog.title"),
           t("deleteDialog.isCurrent"),
           t("common.ok")
@@ -106,7 +107,7 @@ export default function App(): JSX.Element {
       return;
     }
     try {
-      const confirmed = await window.authSwitch.nativeConfirm(
+      const confirmed = await authSwitch.nativeConfirm(
         t("deleteDialog.title"),
         t("deleteDialog.confirm", { name: account.name }),
         t("common.delete"),
@@ -120,7 +121,7 @@ export default function App(): JSX.Element {
 
   async function handleCreateApiProfile(input: CodexApiProfileInput): Promise<void> {
     try {
-      const result = await window.authSwitch.createApiProfile(input);
+      const result = await authSwitch.createApiProfile(input);
       if (!result.success) {
         showError(result.error ?? t("error.saveApiProfileFailed"));
         return;

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import type { Account } from "../types";
+import type { Account } from "../../shared/types";
 
 interface AccountRowProps {
   account: Account;
@@ -58,7 +58,10 @@ export function AccountRow({
             </Badge>
 
             {account.is_current ? (
-              <Badge variant="secondary" className="font-mono text-[10px]">
+              <Badge
+                variant="secondary"
+                className="inline-flex h-7 min-w-[4.75rem] justify-center px-2.5 font-mono text-xs"
+              >
                 {t("accountRow.current")}
               </Badge>
             ) : (
@@ -68,7 +71,7 @@ export function AccountRow({
                 disabled={isSwitching || !!switchingId}
                 onClick={() => onSwitch(account)}
                 className={cn(
-                  "h-7 px-2.5 font-mono text-xs",
+                  "h-7 min-w-[4.75rem] px-2.5 font-mono text-xs",
                   "active:scale-[0.97] transition-transform duration-100"
                 )}
               >

@@ -3,7 +3,8 @@ import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage } from "../../shared/errors";
-import type { ImportResult } from "../types";
+import { authSwitch } from "../api/authSwitch";
+import type { ImportResult } from "../../shared/types";
 
 interface ImportButtonProps {
   onImported: (result: ImportResult) => void;
@@ -18,7 +19,7 @@ export function ImportButton({ onImported, onError }: ImportButtonProps): JSX.El
     if (busy) return;
     setBusy(true);
     try {
-      const result = await window.authSwitch.importAuthFile();
+      const result = await authSwitch.importAuthFile();
       if (result.cancelled) return;
       if (!result.success) {
         onError(result.error ?? t("error.importFailed"));
