@@ -90,9 +90,17 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   build-macos:
-    name: Build macOS release artifacts
+    name: Build macOS release artifacts (${{ matrix.arch }})
     needs: resolve-version
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest
+          - arch: x64
+            runner: macos-13
 
     steps:
       - name: Checkout
@@ -136,11 +144,13 @@ jobs:
 
       - name: Build macOS DMG
         run: pnpm run dist:mac
+        env:
+          AUTH_SWITCH_DMG_ARCH: ${{ matrix.arch }}
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: auth-switch-macos-${{ needs.resolve-version.outputs.version_tag }}
+          name: auth-switch-macos-${{ matrix.arch }}-${{ needs.resolve-version.outputs.version_tag }}
           path: |
             release/*.dmg
 
