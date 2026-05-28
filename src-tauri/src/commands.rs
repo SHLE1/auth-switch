@@ -42,6 +42,16 @@ pub async fn import_auth_file(app: AppHandle) -> Result<ImportResult, String> {
 }
 
 #[tauri::command]
+pub fn import_auth_json_content(app: AppHandle, service: State<'_, AccountsService>, content: String) -> ImportResult {
+    let result = service.import_auth_json_content(content, None, false);
+    if result.success {
+        crate::tray::rebuild_tray_menu(&app, &service);
+        let _ = app.emit("accounts-changed", ());
+    }
+    result
+}
+
+#[tauri::command]
 pub fn create_api_profile(app: AppHandle, service: State<'_, AccountsService>, input: CodexApiProfileInput) -> ImportResult {
     let result = service.create_api_profile(input);
     if result.success {

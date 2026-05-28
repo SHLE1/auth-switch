@@ -71,6 +71,7 @@ export interface AuthSwitchApi {
   getCurrentAccount(): Promise<Account | null>;
   switchAccount(id: string): Promise<SwitchResult>;
   importAuthFile(): Promise<ImportResult>;
+  importAuthJsonContent(content: string): Promise<ImportResult>;
   createApiProfile(input: CodexApiProfileInput): Promise<ImportResult>;
   createClaudeProfile(input: ClaudeProfileInput): Promise<ImportResult>;
   importLiveAuthFile(name?: string, setCurrent?: boolean): Promise<ImportResult>;

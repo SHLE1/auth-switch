@@ -17,6 +17,7 @@ export const authSwitch: AuthSwitchApi = {
   getCurrentAccount: () => invoke<Account | null>("get_current_account"),
   switchAccount: (id: string) => invoke<SwitchResult>("switch_account", { id }),
   importAuthFile: () => invoke<ImportResult>("import_auth_file"),
+  importAuthJsonContent: (content: string) => invoke<ImportResult>("import_auth_json_content", { content }),
   createApiProfile: (input: CodexApiProfileInput) => invoke<ImportResult>("create_api_profile", { input }),
   createClaudeProfile: (input: ClaudeProfileInput) => invoke<ImportResult>("create_claude_profile", { input }),
   importLiveAuthFile: (name?: string, setCurrent?: boolean) =>

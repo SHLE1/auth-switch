@@ -9,7 +9,7 @@ A local-only macOS/Windows Tauri desktop app for switching Codex accounts and Cl
 ## Features
 
 - **One-click account switching** — replaces `~/.codex/auth.json` atomically.
-- **Multiple account import** — import any number of Codex `auth.json` files.
+- **Multiple account import** — import Codex `auth.json` by choosing a local file or pasting JSON content manually.
 - **Auto-detect email** — parses account email from `auth.json` automatically.
 - **Custom display names** — rename any account to something memorable.
 - **API-key profiles** — add OpenAI-compatible endpoints (e.g. AiHubMix, custom proxies); manages only the `openai_base_url` line in `~/.codex/config.toml`.
@@ -50,14 +50,13 @@ A local-only macOS/Windows Tauri desktop app for switching Codex accounts and Cl
 On first launch the app checks for an existing `~/.codex/auth.json`. If found, it will ask whether to import it as your first account.
 
 ### Add a Codex account
-Click **Add auth.json** in the main window, or use **Tray → Add auth.json**. Select a Codex `auth.json` file.
+Click **Add auth.json** in the main window. Choose **Choose local file** to select a Codex `auth.json`, or choose **Paste JSON content** to paste the full file contents manually. The tray/menu-bar **Add auth.json** action still opens the local file picker directly.
 
 ### Switch account
 Click **Switch** next to any account in the list. The app:
 1. Reads the current live `~/.codex/auth.json` and updates the database for normal auth profiles (so no token is lost).
 2. Atomically writes the selected account's stored `auth.json` to `~/.codex/auth.json`.
 3. For API-key profiles only, updates the single managed top-level `openai_base_url` line in `~/.codex/config.toml`.
-
 
 ### Add a Codex API-key profile
 Click **Add API** in the Codex tab. Provide a name, base URL, and API key. The app will:

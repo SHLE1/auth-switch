@@ -61,11 +61,12 @@ export function ApiProfileDialog({ editAccount, onCancel, onSave }: ApiProfileDi
 
   const canSave = !loading && name.trim().length > 0 && apiKey.trim().length > 0 && baseUrl.trim().length > 0;
 
-  function applyPreset(value: string): void {
-    const preset = presets.find((item) => item.name === value);
-    if (!preset) return;
-    setName(preset.name === "Custom" ? "Custom API" : preset.name);
-    setBaseUrl(preset.baseUrl);
+  function applyPreset(presetName: string): void {
+    const preset = presets.find((p) => p.name === presetName);
+    if (preset) {
+      setName(preset.name);
+      setBaseUrl(preset.baseUrl);
+    }
   }
 
   return (
@@ -115,7 +116,6 @@ export function ApiProfileDialog({ editAccount, onCancel, onSave }: ApiProfileDi
             )}
 
             {!isEdit && <Separator />}
-
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="api-name" className="mono-label text-[10px] text-muted-foreground">
                 {t("common.name")}

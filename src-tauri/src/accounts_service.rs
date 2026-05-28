@@ -44,15 +44,24 @@ impl AccountsService {
     }
 
     pub fn import_auth_file_from_path(&self, file_path: &str, name: Option<&str>, set_current: bool) -> ImportResult {
-        match self.import_auth_file_from_path_inner(file_path, name, set_current) {
+        match auth_file::read_and_validate_auth_file(file_path)
+            .and_then(|snapshot| self.import_auth_snapshot_inner(snapshot, name, set_current))
+        {
             Ok(result) => result,
             Err(error) => ImportResult::error(error),
         }
     }
 
-    fn import_auth_file_from_path_inner(&self, file_path: &str, name: Option<&str>, set_current: bool) -> Result<ImportResult, String> {
-        let snapshot = auth_file::read_and_validate_auth_file(file_path)?;
+    pub fn import_auth_json_content(&self, content: String, name: Option<&str>, set_current: bool) -> ImportResult {
+        match auth_file::validate_auth_json_content(content)
+            .and_then(|snapshot| self.import_auth_snapshot_inner(snapshot, name, set_current))
+        {
+            Ok(result) => result,
+            Err(error) => ImportResult::error(error),
+        }
+    }
 
+    fn import_auth_snapshot_inner(&self, snapshot: auth_file::AuthFileSnapshot, name: Option<&str>, set_current: bool) -> Result<ImportResult, String> {
         if self.db.auth_hash_exists(&snapshot.hash).map_err(|error| error.to_string())? {
             return Ok(ImportResult::duplicate("This auth.json is already in auth-switch."));
         }

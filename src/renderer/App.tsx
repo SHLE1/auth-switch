@@ -13,6 +13,7 @@ import { ClaudeProfileDialog } from "./components/ClaudeProfileDialog";
 import { CurrentAccountCard } from "./components/CurrentAccountCard";
 import { FirstRunDialog } from "./components/FirstRunDialog";
 import { ImportButton } from "./components/ImportButton";
+import { PasteAuthJsonDialog } from "./components/PasteAuthJsonDialog";
 import { RenameDialog } from "./components/RenameDialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -38,6 +39,7 @@ export default function App(): JSX.Element {
   const [claudeProfileVisible, setClaudeProfileVisible] = useState(false);
   const [editApiProfile, setEditApiProfile] = useState<Account | null>(null);
   const [editClaudeProfile, setEditClaudeProfile] = useState<Account | null>(null);
+  const [pasteAuthJsonVisible, setPasteAuthJsonVisible] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Account | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
@@ -338,7 +340,11 @@ export default function App(): JSX.Element {
                   >
                     {t("app.addApi")}
                   </Button>
-                  <ImportButton onImported={handleImported} onError={showError} />
+                  <ImportButton
+                    onImported={handleImported}
+                    onError={showError}
+                    onPasteJson={() => setPasteAuthJsonVisible(true)}
+                  />
                 </>
               ) : (
                 <Button
@@ -410,6 +416,17 @@ export default function App(): JSX.Element {
               void handleCreateClaudeProfile(input);
             }
           }}
+        />
+      )}
+
+      {pasteAuthJsonVisible && (
+        <PasteAuthJsonDialog
+          onCancel={() => setPasteAuthJsonVisible(false)}
+          onImported={(result) => {
+            setPasteAuthJsonVisible(false);
+            handleImported(result);
+          }}
+          onError={showError}
         />
       )}
 
