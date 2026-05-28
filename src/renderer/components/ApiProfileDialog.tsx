@@ -11,28 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import type { CodexApiProfileInput } from "../../shared/types";
 
 interface ApiProfileDialogProps {
   onCancel: () => void;
   onSave: (input: CodexApiProfileInput) => void;
 }
-
-const presets = [
-  { name: "Custom", baseUrl: "" },
-  { name: "AiHubMix", baseUrl: "https://aihubmix.com/v1" },
-  { name: "PatewayAI", baseUrl: "https://api.pateway.ai/v1" },
-  { name: "DMXAPI", baseUrl: "https://www.dmxapi.cn/v1" },
-  { name: "Azure OpenAI", baseUrl: "https://YOUR_RESOURCE_NAME.openai.azure.com/openai" }
-];
 
 export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): JSX.Element {
   const { t } = useTranslation();
@@ -41,13 +25,6 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
   const [baseUrl, setBaseUrl] = useState("");
 
   const canSave = name.trim().length > 0 && apiKey.trim().length > 0 && baseUrl.trim().length > 0;
-
-  function applyPreset(value: string): void {
-    const preset = presets.find((item) => item.name === value);
-    if (!preset) return;
-    setName(preset.name === "Custom" ? "Custom API" : preset.name);
-    setBaseUrl(preset.baseUrl);
-  }
 
   return (
     <Dialog
@@ -73,26 +50,6 @@ export function ApiProfileDialog({ onCancel, onSave }: ApiProfileDialogProps): J
           }}
         >
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label className="mono-label text-[10px] text-muted-foreground">
-                {t("apiProfile.preset")}
-              </Label>
-              <Select onValueChange={applyPreset} defaultValue="Custom">
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {presets.map((preset) => (
-                    <SelectItem key={preset.name} value={preset.name} className="text-sm">
-                      {preset.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Separator />
-
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="api-name" className="mono-label text-[10px] text-muted-foreground">
                 {t("common.name")}

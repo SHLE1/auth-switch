@@ -9,10 +9,10 @@ A local-only macOS/Windows Tauri desktop app for switching OpenAI Codex accounts
 ## Features
 
 - **One-click account switching** — replaces `~/.codex/auth.json` atomically.
-- **Multiple account import** — import any number of Codex `auth.json` files.
+- **Multiple account import** — import Codex `auth.json` by choosing a local file or pasting JSON content manually.
 - **Auto-detect email** — parses account email from `auth.json` automatically.
 - **Custom display names** — rename any account to something memorable.
-- **API-key profiles** — add OpenAI-compatible endpoints (e.g. AiHubMix, custom proxies); manages only the `openai_base_url` line in `~/.codex/config.toml`.
+- **API-key profiles** — add any OpenAI-compatible endpoint manually; manages only the `openai_base_url` line in `~/.codex/config.toml`.
 - **Tray / menu-bar quick switcher** — switch accounts without opening the main window.
 - **Dark / light theme** — follows system preference; toggleable in the header.
 - **English / Simplified Chinese UI** — language toggle in the header, preference saved locally.
@@ -49,7 +49,7 @@ A local-only macOS/Windows Tauri desktop app for switching OpenAI Codex accounts
 On first launch the app checks for an existing `~/.codex/auth.json`. If found, it will ask whether to import it as your first account.
 
 ### Add a Codex account
-Click **Add auth.json** in the main window, or use **Tray → Add auth.json**. Select a Codex `auth.json` file.
+Click **Add auth.json** in the main window. Choose **Choose local file** to select a Codex `auth.json`, or choose **Paste JSON content** to paste the full file contents manually. The tray/menu-bar **Add auth.json** action still opens the local file picker directly.
 
 ### Switch account
 Click **Switch** next to any account in the list. The app:
@@ -58,7 +58,7 @@ Click **Switch** next to any account in the list. The app:
 3. For API-key profiles only, updates the single managed top-level `openai_base_url` line in `~/.codex/config.toml`.
 
 ### Add an API-key profile
-Click **Add API** in the header. Provide a name, base URL, and API key. The app will:
+Click **Add API** in the header. Provide a name, Base URL, and API key manually. The app will:
 - Write an API-key-shaped `auth.json` (`{ "auth_mode": "apikey", "OPENAI_API_KEY": "..." }`).
 - Add or update only `openai_base_url = "..."` in `~/.codex/config.toml`.
 

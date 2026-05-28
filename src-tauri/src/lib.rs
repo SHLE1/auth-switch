@@ -17,10 +17,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            tray::show_main_window(app);
         }))
         .manage(AccountsService::new().expect("failed to initialize auth-switch service"))
         .invoke_handler(tauri::generate_handler![
@@ -28,6 +25,7 @@ pub fn run() {
             commands::get_current_account,
             commands::switch_account,
             commands::import_auth_file,
+            commands::import_auth_json_content,
             commands::create_api_profile,
             commands::import_live_auth_file,
             commands::rename_account,
@@ -42,10 +40,7 @@ pub fn run() {
         .setup(|app| {
             let service = app.state::<AccountsService>();
             tray::create_tray(app.handle(), &service);
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            tray::show_main_window(app.handle());
             Ok(())
         })
         .on_menu_event(|app, event| {
@@ -56,6 +51,10 @@ pub fn run() {
                 if window.label() == "main" {
                     api.prevent_close();
                     let _ = window.hide();
+                    #[cfg(target_os = "macos")]
+                    let _ = window
+                        .app_handle()
+                        .set_activation_policy(tauri::ActivationPolicy::Accessory);
                 }
             }
         })

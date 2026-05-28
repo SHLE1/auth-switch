@@ -46,6 +46,7 @@ export interface AuthSwitchApi {
   getCurrentAccount(): Promise<Account | null>;
   switchAccount(id: string): Promise<SwitchResult>;
   importAuthFile(): Promise<ImportResult>;
+  importAuthJsonContent(content: string): Promise<ImportResult>;
   createApiProfile(input: CodexApiProfileInput): Promise<ImportResult>;
   importLiveAuthFile(name?: string, setCurrent?: boolean): Promise<ImportResult>;
   renameAccount(id: string, name: string): Promise<void>;
