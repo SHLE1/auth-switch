@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type {
   Account,
+  AccountUsageQuota,
   AuthSwitchApi,
   ClaudeProfileInput,
   CodexApiProfileInput,
@@ -15,6 +16,7 @@ import type {
 export const authSwitch: AuthSwitchApi = {
   getAccounts: () => invoke<Account[]>("get_accounts"),
   getCurrentAccount: () => invoke<Account | null>("get_current_account"),
+  getAccountUsageQuota: (id: string) => invoke<AccountUsageQuota>("get_account_usage_quota", { id }),
   switchAccount: (id: string) => invoke<SwitchResult>("switch_account", { id }),
   importAuthFile: () => invoke<ImportResult>("import_auth_file"),
   importAuthJsonContent: (content: string) => invoke<ImportResult>("import_auth_json_content", { content }),

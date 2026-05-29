@@ -39,7 +39,7 @@ export function AccountList({
     );
   }
 
-  if (accounts.length === 0) {
+  if (accounts.length === 0 || accounts.every((account) => account.is_current)) {
     return (
       <div className="flex flex-col items-center gap-2.5 rounded-xl border border-dashed bg-card py-10 text-center">
         <FileKey size={18} className="text-muted-foreground/40" />
@@ -48,6 +48,38 @@ export function AccountList({
     );
   }
 
+  const visibleAccounts = accounts.filter((account) => !account.is_current);
+  const authAccounts = visibleAccounts.filter((account) => account.app !== "codex" || account.kind === "auth_json");
+  const apiProfiles = visibleAccounts.filter((account) => account.app === "codex" && account.kind === "api_key");
+
+  if (apiProfiles.length === 0) {
+    return <AccountRows accounts={authAccounts} switchingId={switchingId} onSwitch={onSwitch} onEdit={onEdit} onRename={onRename} onDelete={onDelete} />;
+  }
+
+  return (
+    <div className="space-y-5">
+      {authAccounts.length > 0 && (
+        <section className="space-y-2">
+          <p className="mono-label px-1 text-[10px] text-muted-foreground/60">{t("accountList.authAccounts")}</p>
+          <AccountRows accounts={authAccounts} switchingId={switchingId} onSwitch={onSwitch} onEdit={onEdit} onRename={onRename} onDelete={onDelete} />
+        </section>
+      )}
+      <section className="space-y-2">
+        <p className="mono-label px-1 text-[10px] text-muted-foreground/60">{t("accountList.apiProfiles")}</p>
+        <AccountRows accounts={apiProfiles} switchingId={switchingId} onSwitch={onSwitch} onEdit={onEdit} onRename={onRename} onDelete={onDelete} />
+      </section>
+    </div>
+  );
+}
+
+function AccountRows({
+  accounts,
+  switchingId,
+  onSwitch,
+  onEdit,
+  onRename,
+  onDelete
+}: Omit<AccountListProps, "loading" | "emptyKey">): JSX.Element {
   return (
     <div className="space-y-3">
       {accounts.map((account) => (

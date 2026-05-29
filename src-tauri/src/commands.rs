@@ -1,4 +1,5 @@
 use crate::accounts_service::AccountsService;
+use crate::models::AccountUsageQuota;
 use crate::models::{Account, ClaudeProfileInput, CodexApiProfileInput, ImportResult, LiveAuthStatus, LiveClaudeStatus, ProfileEditData, SwitchResult};
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -166,4 +167,9 @@ pub fn update_claude_profile(app: AppHandle, service: State<'_, AccountsService>
         let _ = app.emit("accounts-changed", ());
     }
     result
+}
+
+#[tauri::command]
+pub async fn get_account_usage_quota(service: State<'_, AccountsService>, id: String) -> Result<AccountUsageQuota, String> {
+    service.get_account_usage_quota(&id).await
 }

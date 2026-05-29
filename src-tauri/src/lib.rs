@@ -41,6 +41,7 @@ pub fn run() {
             commands::get_profile_edit_data,
             commands::update_api_profile,
             commands::update_claude_profile,
+            commands::get_account_usage_quota,
             commands::set_language
         ])
         .setup(|app| {

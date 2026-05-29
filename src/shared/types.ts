@@ -12,6 +12,31 @@ export interface Account {
   last_used_at: number | null;
 }
 
+export type CredentialStatus = "valid" | "expired" | "not_found" | "parse_error";
+
+export interface QuotaTier {
+  name: string;
+  utilization: number;
+  remaining: number;
+  resetsAt: string | null;
+}
+
+export interface AccountUsageQuota {
+  accountId: string;
+  credentialStatus: CredentialStatus;
+  credentialMessage: string | null;
+  success: boolean;
+  tiers: QuotaTier[];
+  amount: number | null;
+  unit: string | null;
+  used: number | null;
+  limit: number | null;
+  unlimited: boolean;
+  source: string | null;
+  error: string | null;
+  queriedAt: number | null;
+}
+
 export interface ProfileEditData {
   name: string;
   apiKey: string;
@@ -70,6 +95,7 @@ export interface AuthSwitchApi {
   getAccounts(): Promise<Account[]>;
   getCurrentAccount(): Promise<Account | null>;
   switchAccount(id: string): Promise<SwitchResult>;
+  getAccountUsageQuota(id: string): Promise<AccountUsageQuota>;
   importAuthFile(): Promise<ImportResult>;
   importAuthJsonContent(content: string): Promise<ImportResult>;
   createApiProfile(input: CodexApiProfileInput): Promise<ImportResult>;

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+pub use crate::codex::usage::AccountUsageQuota;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Account {
