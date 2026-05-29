@@ -16,7 +16,7 @@
 - Must include both:
   - Main management window.
   - System tray/menu bar quick-switch menu.
-- App should be local-only and never contact external services.
+- App should be local-first and never contact external services except explicit Codex subscription usage checks, which query OpenAI/ChatGPT using the selected `auth.json` OAuth token.
 - No encryption required for stored auth data.
 
 ## Codex auth handling
@@ -31,6 +31,16 @@
 - Switching should directly replace the live Codex `auth.json`.
 - Before switching away from the current account, read the current live `~/.codex/auth.json` and backfill it into the current database record so Codex token refreshes are not lost.
 - Use atomic file replacement when writing `auth.json`.
+
+## Usage and API balance display
+
+- Subscription usage is for normal Codex `auth_json` accounts with `auth_mode: "chatgpt"`.
+- Codex API-key profiles should query provider balance when supported. Try sub2api first via `${base_url}/v1/usage` (preserving an existing trailing `/v1`) with Bearer API key, then new-api via `${base_url without trailing /v1}/dashboard/billing/subscription` plus `/dashboard/billing/usage`.
+- Claude Code API-key profiles should query provider balance when the configured base URL supports sub2api `/v1/usage`, using `ANTHROPIC_AUTH_TOKEN` as the Bearer token.
+- Implement Codex subscription usage checks like `cc-switch`: call `https://chatgpt.com/backend-api/wham/usage` with the account's OAuth `access_token`, `User-Agent: codex-cli`, and `ChatGPT-Account-Id` when present in `auth.json`.
+- Parse `rate_limit.primary_window` and `rate_limit.secondary_window`; show remaining percentage as `100 - used_percent`, reset time from `reset_at`, and map `18000` seconds to `five_hour`, `604800` seconds to `seven_day`.
+- Auto-refresh all stored Codex and Claude profiles once when the main window opens, then keep row-level manual refresh available.
+
 
 ## Codex API-key profile handling
 

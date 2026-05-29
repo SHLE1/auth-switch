@@ -5,3 +5,4 @@ pub mod env;
 pub mod parser;
 pub mod paths;
 pub mod writer;
+pub mod usage;

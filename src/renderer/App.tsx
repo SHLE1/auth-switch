@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { AlertTriangle, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getErrorMessage } from "../shared/errors";
@@ -6,7 +6,7 @@ import { authSwitch } from "./api/authSwitch";
 import { setLanguage } from "./i18n/index";
 import { useAccounts } from "./hooks/useAccounts";
 import { useTheme } from "./hooks/useTheme";
-import type { Account, ClaudeProfileInput, CodexApiProfileInput, ImportResult } from "../shared/types";
+import type { Account, AccountUsageQuota, ClaudeProfileInput, CodexApiProfileInput, ImportResult } from "../shared/types";
 import { AccountList } from "./components/AccountList";
 import { ApiProfileDialog } from "./components/ApiProfileDialog";
 import { ClaudeProfileDialog } from "./components/ClaudeProfileDialog";
@@ -17,6 +17,10 @@ import { PasteAuthJsonDialog } from "./components/PasteAuthJsonDialog";
 import { RenameDialog } from "./components/RenameDialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { EMPTY_USAGE_QUOTA_STATE, UsageQuotaContext, type UsageQuotaState } from "./contexts/UsageQuotaContext";
+function isTauriRuntime(): boolean {
+  return "__TAURI_INTERNALS__" in window;
+}
 
 export default function App(): JSX.Element {
   const { t, i18n } = useTranslation();
@@ -44,7 +48,47 @@ export default function App(): JSX.Element {
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
+  const [usageQuotaByAccountId, setUsageQuotaByAccountId] = useState<Record<string, UsageQuotaState>>({});
+  const usageRefreshStartedRef = useRef(false);
+  const refreshUsageAccount = useCallback(async (accountId: string) => {
+    setUsageQuotaByAccountId((prev) => ({
+      ...prev,
+      [accountId]: { ...(prev[accountId] ?? EMPTY_USAGE_QUOTA_STATE), loading: true, error: null }
+    }));
+    try {
+      const mockQuota = !isTauriRuntime()
+        ? (window as Window & { __AUTH_SWITCH_MOCK_USAGE__?: Record<string, AccountUsageQuota> }).__AUTH_SWITCH_MOCK_USAGE__?.[accountId]
+        : null;
+      const quota = mockQuota ?? await authSwitch.getAccountUsageQuota(accountId);
+      setUsageQuotaByAccountId((prev) => ({
+        ...prev,
+        [accountId]: { quota, loading: false, error: null }
+      }));
+    } catch (error) {
+      setUsageQuotaByAccountId((prev) => ({
+        ...prev,
+        [accountId]: { quota: prev[accountId]?.quota ?? null, loading: false, error: getErrorMessage(error) }
+      }));
+    }
+  }, []);
 
+  useEffect(() => {
+    if (loading || usageRefreshStartedRef.current) return;
+    usageRefreshStartedRef.current = true;
+    for (const account of accounts) {
+      if (account.app === "codex" || account.app === "claude") {
+        void refreshUsageAccount(account.id);
+      }
+    }
+  }, [accounts, loading, refreshUsageAccount]);
+
+  const usageQuotaContextValue = useMemo(
+    () => ({
+      getState: (accountId: string) => usageQuotaByAccountId[accountId] ?? EMPTY_USAGE_QUOTA_STATE,
+      refreshAccount: refreshUsageAccount
+    }),
+    [refreshUsageAccount, usageQuotaByAccountId]
+  );
   useEffect(() => {
     const idx = activeTab === "codex" ? 0 : 1;
     const el = tabRefs.current[idx];
@@ -73,6 +117,7 @@ export default function App(): JSX.Element {
   );
 
   useEffect(() => {
+    if (!isTauriRuntime()) return;
     authSwitch
       .shouldShowFirstRun()
       .then(setFirstRunVisible)
@@ -94,6 +139,7 @@ export default function App(): JSX.Element {
         account.app
       );
       await refresh();
+      if (account.app === "codex" || account.app === "claude") await refreshUsageAccount(account.id);
     } catch (error) {
       showError(getErrorMessage(error));
     } finally {
@@ -103,10 +149,11 @@ export default function App(): JSX.Element {
 
   async function handleRename(name: string): Promise<void> {
     if (!renameTarget) return;
+    const renamedAccount = renameTarget;
     try {
-      await authSwitch.renameAccount(renameTarget.id, name);
+      await authSwitch.renameAccount(renamedAccount.id, name);
       setRenameTarget(null);
-      showNotice(t("notice.renamed", { name }), renameTarget.app);
+      showNotice(t("notice.renamed", { name }), renamedAccount.app);
       await refresh();
     } catch (error) {
       showError(getErrorMessage(error));
@@ -118,6 +165,13 @@ export default function App(): JSX.Element {
       await authSwitch.deleteAccount(account.id);
       showNotice(t("notice.deleted", { name: account.name }), account.app);
       await refresh();
+      if (account.app === "codex" || account.app === "claude") {
+        setUsageQuotaByAccountId((prev) => {
+          const next = { ...prev };
+          delete next[account.id];
+          return next;
+        });
+      }
     } catch (error) {
       showError(getErrorMessage(error));
     }
@@ -159,6 +213,7 @@ export default function App(): JSX.Element {
       setApiProfileVisible(false);
       showNotice(t("notice.savedApiProfile", { name: result.account?.name ?? input.name }), "codex");
       await refresh();
+      if (result.account) await refreshUsageAccount(result.account.id);
     } catch (error) {
       showError(getErrorMessage(error));
     }
@@ -174,6 +229,7 @@ export default function App(): JSX.Element {
       setClaudeProfileVisible(false);
       showNotice(t("notice.savedClaudeProfile", { name: result.account?.name ?? input.name }), "claude");
       await refresh();
+      if (result.account) await refreshUsageAccount(result.account.id);
     } catch (error) {
       showError(getErrorMessage(error));
     }
@@ -190,6 +246,7 @@ export default function App(): JSX.Element {
       setEditApiProfile(null);
       showNotice(t("notice.updatedApiProfile", { name: result.account?.name ?? input.name }), "codex");
       await refresh();
+      if (result.account) await refreshUsageAccount(result.account.id);
     } catch (error) {
       showError(getErrorMessage(error));
     }
@@ -206,6 +263,7 @@ export default function App(): JSX.Element {
       setEditClaudeProfile(null);
       showNotice(t("notice.updatedClaudeProfile", { name: result.account?.name ?? input.name }), "claude");
       await refresh();
+      if (result.account) await refreshUsageAccount(result.account.id);
     } catch (error) {
       showError(getErrorMessage(error));
     }
@@ -227,23 +285,23 @@ export default function App(): JSX.Element {
         sameEmailNote,
       "codex"
     );
-    void refresh();
+    void refresh().then(() => {
+      if (result.account && (result.account.app === "codex" || result.account.app === "claude")) void refreshUsageAccount(result.account.id);
+    });
   }
 
   const currentLang = i18n.language.startsWith("zh") ? "zh" : "en";
   const dragRegionStyle = { WebkitAppRegion: "drag" } as CSSProperties;
   const noDragRegionStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
-  const isMac = /Macintosh/.test(navigator.userAgent);
   const activeAccounts = activeTab === "claude" ? claudeAccounts : codexAccounts;
   const activeCurrent = activeTab === "claude" ? claudeCurrent : codexCurrent;
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background">
-      {isMac && <div style={dragRegionStyle} className="h-8 w-full shrink-0" />}
-
+    <UsageQuotaContext.Provider value={usageQuotaContextValue}>
+      <main className="flex h-screen min-w-[680px] flex-col overflow-hidden bg-background">
       <header
         style={dragRegionStyle}
-        className="flex shrink-0 items-center border-b bg-background/80 backdrop-blur-md px-5 py-3 gap-4"
+        className="flex shrink-0 items-center border-b bg-background/80 backdrop-blur-md px-5 py-2.5 gap-4"
       >
         {/* Left: title */}
         <div className="shrink-0">
@@ -448,6 +506,7 @@ export default function App(): JSX.Element {
           onSave={(name) => void handleRename(name)}
         />
       )}
-    </main>
+      </main>
+    </UsageQuotaContext.Provider>
   );
 }

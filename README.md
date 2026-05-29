@@ -12,12 +12,13 @@ A local-only macOS/Windows Tauri desktop app for switching Codex accounts and Cl
 - **Multiple account import** — import Codex `auth.json` by choosing a local file or pasting JSON content manually.
 - **Auto-detect email** — parses account email from `auth.json` automatically.
 - **Custom display names** — rename any account to something memorable.
+- **Usage and balance display** — shows remaining Codex subscription quota for ChatGPT/OAuth `auth.json` accounts and API-key profile balance for supported new-api/sub2api endpoints.
 - **API-key profiles** — add OpenAI-compatible endpoints (e.g. AiHubMix, custom proxies); manages only the `openai_base_url` line in `~/.codex/config.toml`.
 - **Claude Code API profiles** — add and switch Claude Code API-key profiles by writing `~/.claude/settings.json`.
 - **Tray / menu-bar quick switcher** — switch accounts without opening the main window.
 - **Dark / light theme** — follows system preference; toggleable in the header.
 - **English / Simplified Chinese UI** — language toggle in the header, preference saved locally.
-- **Local-only Tauri backend** — no network calls, no in-app update checks, no cloud sync. All data is stored in `~/.auth-switch/auth-switch.db` (SQLite).
+- **Local-first Tauri backend** — no cloud sync, no app telemetry, and no in-app update checks. All data is stored in `~/.auth-switch/auth-switch.db` (SQLite). The only external requests are explicit usage/balance checks to OpenAI/ChatGPT, new-api, or sub2api endpoints for the selected profile.
 - **Token refresh safe** — before switching away from a normal auth account, the live `auth.json` is read back and stored, so Codex token refreshes are never lost.
 
 ---
@@ -50,7 +51,7 @@ A local-only macOS/Windows Tauri desktop app for switching Codex accounts and Cl
 On first launch the app checks for an existing `~/.codex/auth.json`. If found, it will ask whether to import it as your first account.
 
 ### Add a Codex account
-Click **Add auth.json** in the main window. Choose **Choose local file** to select a Codex `auth.json`, or choose **Paste JSON content** to paste the full file contents manually. The tray/menu-bar **Add auth.json** action still opens the local file picker directly.
+Click **Add auth.json** in the main window. Choose **Choose local file** to select a Codex `auth.json`, or choose **Paste JSON content** to paste the full file contents manually.
 
 ### Switch account
 Click **Switch** next to any account in the list. The app:
@@ -65,6 +66,11 @@ Click **Add API** in the Codex tab. Provide a name, base URL, and API key. The a
 
 Switching back to a normal auth account comments out the auth-switch-managed `openai_base_url` line rather than deleting unrelated config.
 
+### Check usage and API balance
+For normal Codex `auth.json` accounts using ChatGPT/OAuth auth, the current account card shows remaining subscription usage for Codex rate-limit windows. For Codex API-key profiles, auth-switch tries supported provider balance endpoints: sub2api `/v1/usage` first, then new-api `/dashboard/billing/subscription` and `/dashboard/billing/usage`.
+
+Claude Code API profiles also show provider balance when the configured base URL supports the sub2api `/v1/usage` endpoint. Profiles refresh once when the main window opens, and manual refresh remains available per row.
+
 ### Add a Claude Code API profile
 Switch to the **Claude Code** tab and click **Add Claude API**. Provide a name, auth token, optional base URL, and optional Haiku / Sonnet / Opus model mappings. The app writes the selected profile to `~/.claude/settings.json` when you switch to it.
 
@@ -74,7 +80,7 @@ Claude Code switching is independent from Codex switching: one current Codex acc
 Click **Switch** next to any account/profile in the active tab. For Codex, the app updates `~/.codex/auth.json` and, for API-key profiles, the managed `openai_base_url` line. For Claude Code, the app reads back the current live `~/.claude/settings.json` before switching, then atomically writes the selected profile to that file.
 
 ### Tray / menu bar
-The tray menu lets you switch Codex accounts and Claude Code profiles, open the main window, add a Codex auth file, and quit without opening the window. It uses the monochrome system tray/menu-bar icon and shows shortcuts for **Open Window** (`Command+,` on macOS, `Ctrl+W` on Windows) and **Quit** (`Command+Q` on macOS, `Ctrl+Q` on Windows). Closing the main window keeps auth-switch running in the tray/menu bar; use **Quit** to exit.
+The tray menu lets you switch Codex accounts and Claude Code profiles, open the main window, and quit without opening the window. It uses the monochrome system tray/menu-bar icon and shows localized labels plus shortcuts for **Open Window** (`Command+,` on macOS, `Ctrl+W` on Windows) and **Quit** (`Command+Q` on macOS, `Ctrl+Q` on Windows). Closing the main window keeps auth-switch running in the tray/menu bar; use **Quit** to exit.
 
 ### Rename / Delete / Edit
 Use the **⋯** menu on any account row. The menu always shows **Rename** and **Delete**. For API-key profiles (Codex API or Claude Code), it also shows **Edit** to update the name, URL, key, or model mappings.

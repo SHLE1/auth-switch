@@ -43,7 +43,6 @@ pub fn rebuild_tray_menu(app: &AppHandle, service: &AccountsService) {
 pub fn handle_menu_event(app: &AppHandle, id: &str) {
     match id {
         "open-window" => show_main_window(app),
-        "add-auth" => add_auth_from_tray(app.clone()),
         "quit" => app.exit(0),
         other if other.starts_with("switch:") => {
             let account_id = other.trim_start_matches("switch:").to_string();
@@ -65,24 +64,6 @@ pub fn handle_menu_event(app: &AppHandle, id: &str) {
     }
 }
 
-fn add_auth_from_tray(app: AppHandle) {
-    show_main_window(&app);
-    tauri::async_runtime::spawn(async move {
-        let Some(path) = crate::dialog::pick_auth_json(&app).await else {
-            return;
-        };
-        let service = app.state::<AccountsService>();
-        let result = service.import_auth_file_from_path(path.to_string_lossy().as_ref(), None, false);
-        if result.success {
-            rebuild_tray_menu(&app, &service);
-            let _ = app.emit("accounts-changed", ());
-        } else if !result.cancelled.unwrap_or(false) {
-            if let Some(error) = result.error.as_ref() {
-                crate::notifications::notify(&app, "auth-switch", error);
-            }
-        }
-    });
-}
 
 pub fn show_main_window(app: &AppHandle) {
     #[cfg(target_os = "macos")]
@@ -111,26 +92,47 @@ fn quit_accelerator() -> &'static str {
 }
 
 fn build_menu(app: &AppHandle, service: &AccountsService) -> tauri::menu::Menu<tauri::Wry> {
+    let locale = service.locale();
     let mut builder = MenuBuilder::new(app);
-    builder = builder.item(&MenuItemBuilder::with_id("title", "auth-switch").enabled(false).build(app).unwrap());
+    builder = builder.item(&MenuItemBuilder::with_id("title", crate::i18n::tray_label(&locale, "app")).enabled(false).build(app).unwrap());
     builder = builder.item(&PredefinedMenuItem::separator(app).unwrap());
 
     match service.list_accounts() {
         Ok(accounts) if !accounts.is_empty() => {
+            let codex_accounts: Vec<_> = accounts.iter().filter(|account| account.app == "codex").collect();
+            let has_codex_api = codex_accounts.iter().any(|account| account.kind == crate::models::AccountKind::ApiKey);
+            let has_codex_auth = codex_accounts.iter().any(|account| account.kind != crate::models::AccountKind::ApiKey);
             let mut has_codex = false;
             let mut has_claude = false;
 
-            for account in accounts.iter().filter(|account| account.app == "codex") {
-                if !has_codex {
-                    builder = builder.item(&MenuItemBuilder::with_id("codex-title", "CODEX").enabled(false).build(app).unwrap());
-                    has_codex = true;
+            if !codex_accounts.is_empty() {
+                has_codex = true;
+                builder = builder.item(&MenuItemBuilder::with_id("codex-title", crate::i18n::tray_label(&locale, "codex")).enabled(false).build(app).unwrap());
+                if has_codex_api && has_codex_auth {
+                    builder = builder.item(&MenuItemBuilder::with_id("codex-auth-title", crate::i18n::tray_label(&locale, "codex_auth")).enabled(false).build(app).unwrap());
                 }
-                let item = CheckMenuItemBuilder::with_id(format!("switch:{}", account.id), account.name.clone())
-                    .checked(account.is_current)
-                    .enabled(true)
-                    .build(app)
-                    .unwrap();
-                builder = builder.item(&item);
+                for account in codex_accounts.iter().copied().filter(|account| account.kind != crate::models::AccountKind::ApiKey) {
+                    let item = CheckMenuItemBuilder::with_id(format!("switch:{}", account.id), account.name.clone())
+                        .checked(account.is_current)
+                        .enabled(true)
+                        .build(app)
+                        .unwrap();
+                    builder = builder.item(&item);
+                }
+                if has_codex_api {
+                    if has_codex_auth {
+                        builder = builder.item(&PredefinedMenuItem::separator(app).unwrap());
+                    }
+                    builder = builder.item(&MenuItemBuilder::with_id("codex-api-title", crate::i18n::tray_label(&locale, "codex_api")).enabled(false).build(app).unwrap());
+                    for account in codex_accounts.iter().copied().filter(|account| account.kind == crate::models::AccountKind::ApiKey) {
+                        let item = CheckMenuItemBuilder::with_id(format!("switch:{}", account.id), account.name.clone())
+                            .checked(account.is_current)
+                            .enabled(true)
+                            .build(app)
+                            .unwrap();
+                        builder = builder.item(&item);
+                    }
+                }
             }
 
             for account in accounts.iter().filter(|account| account.app == "claude") {
@@ -138,7 +140,7 @@ fn build_menu(app: &AppHandle, service: &AccountsService) -> tauri::menu::Menu<t
                     if has_codex {
                         builder = builder.item(&PredefinedMenuItem::separator(app).unwrap());
                     }
-                    builder = builder.item(&MenuItemBuilder::with_id("claude-title", "CLAUDE CODE").enabled(false).build(app).unwrap());
+                    builder = builder.item(&MenuItemBuilder::with_id("claude-title", crate::i18n::tray_label(&locale, "claude")).enabled(false).build(app).unwrap());
                     has_claude = true;
                 }
                 let item = CheckMenuItemBuilder::with_id(format!("switch:{}", account.id), account.name.clone())
@@ -150,21 +152,20 @@ fn build_menu(app: &AppHandle, service: &AccountsService) -> tauri::menu::Menu<t
             }
         }
         _ => {
-            builder = builder.item(&MenuItemBuilder::with_id("empty", "No accounts").enabled(false).build(app).unwrap());
+            builder = builder.item(&MenuItemBuilder::with_id("empty", crate::i18n::tray_label(&locale, "no_accounts")).enabled(false).build(app).unwrap());
         }
     }
 
     builder = builder.item(&PredefinedMenuItem::separator(app).unwrap());
-    builder = builder.item(&MenuItemBuilder::with_id("add-auth", "Add Codex auth.json").build(app).unwrap());
     builder = builder.item(
-        &MenuItemBuilder::with_id("open-window", "Open Window")
+        &MenuItemBuilder::with_id("open-window", crate::i18n::tray_label(&locale, "open_window"))
             .accelerator(open_window_accelerator())
             .build(app)
             .unwrap(),
     );
     builder = builder.item(&PredefinedMenuItem::separator(app).unwrap());
     builder = builder.item(
-        &MenuItemBuilder::with_id("quit", "Quit")
+        &MenuItemBuilder::with_id("quit", crate::i18n::tray_label(&locale, "quit"))
             .accelerator(quit_accelerator())
             .build(app)
             .unwrap(),

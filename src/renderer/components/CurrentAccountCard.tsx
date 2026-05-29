@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { Account } from "../../shared/types";
 import { cn } from "@/lib/utils";
+import { AccountUsageQuotaView } from "./AccountUsageQuotaView";
 
 interface CurrentAccountCardProps {
   account: Account | null;
@@ -19,7 +20,7 @@ export function CurrentAccountCard({ account, app }: CurrentAccountCardProps): J
 
       <div
         className={cn(
-          "relative overflow-hidden rounded-xl border p-4 transition-colors duration-200",
+          "relative overflow-hidden rounded-xl border p-3 transition-colors duration-200",
           account
             ? "border-blue-500/60 bg-card shadow-sm shadow-blue-500/10"
             : "border-border bg-card"
@@ -30,10 +31,9 @@ export function CurrentAccountCard({ account, app }: CurrentAccountCardProps): J
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent pointer-events-none" />
         )}
 
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex min-h-[3.75rem] items-center gap-3">
           {account ? (
             <>
-              {/* Icon avatar */}
               <div
                 className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border font-mono text-base font-semibold",
@@ -45,14 +45,14 @@ export function CurrentAccountCard({ account, app }: CurrentAccountCardProps): J
                 {account.name.charAt(0).toUpperCase()}
               </div>
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-[180px] flex-1">
                 <div className="flex items-center gap-2 min-h-[1.25rem]">
-                  <p className="text-sm font-semibold tracking-tight truncate">{account.name}</p>
+                  <p className="truncate text-sm font-semibold tracking-tight">{account.name}</p>
                   <span className="inline-flex items-center rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400">
                     {t("accountRow.current")}
                   </span>
                 </div>
-                <p className="mt-0.5 font-mono text-xs text-muted-foreground truncate">
+                <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                   {isClaude
                     ? account.base_url ?? t("currentAccount.claudeOfficial")
                     : account.kind === "api_key"
@@ -60,6 +60,7 @@ export function CurrentAccountCard({ account, app }: CurrentAccountCardProps): J
                       : account.email ?? t("currentAccount.emailUnavailable")}
                 </p>
               </div>
+              {(app === "codex" || app === "claude") && <AccountUsageQuotaView account={account} inline />}
             </>
           ) : (
             <div>

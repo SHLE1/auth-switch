@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { AccountUsageQuotaView } from "./AccountUsageQuotaView";
 import type { Account } from "../../shared/types";
 
 interface AccountRowProps {
@@ -37,7 +38,7 @@ export function AccountRow({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border p-4 transition-all duration-300",
+        "relative overflow-hidden rounded-xl border border-border p-3 transition-all duration-300",
         "bg-card text-card-foreground",
         account.is_current
           ? "border-blue-500/60 shadow-sm shadow-blue-500/10"
@@ -52,9 +53,8 @@ export function AccountRow({
         )}
       />
 
-      <div className="relative flex items-center justify-between gap-3">
-        {/* Left: avatar + name + subtitle */}
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="relative flex min-h-[3.75rem] items-center gap-3">
+        <div className="flex min-w-[180px] flex-1 items-center gap-3">
           <div
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border font-mono text-sm font-semibold",
@@ -88,7 +88,8 @@ export function AccountRow({
           </div>
         </div>
 
-        {/* Right: Switch/Current + always-visible three-dot menu */}
+        <AccountUsageQuotaView account={account} inline />
+
         <div className="flex shrink-0 items-center gap-2">
           {account.is_current ? (
             <span className="inline-flex items-center rounded-lg bg-blue-500/10 px-3 py-1.5 font-mono text-[11px] font-medium text-blue-600 dark:text-blue-400 tracking-wide">

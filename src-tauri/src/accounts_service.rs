@@ -1,7 +1,7 @@
 use crate::claude::{paths as claude_paths, settings as claude_settings};
-use crate::codex::{api_profile, auth_file, config, env, paths, writer};
+use crate::codex::{api_profile, auth_file, config, env, paths, usage, writer};
 use crate::db::{now_ms, Database, NewAccountRow};
-use crate::models::{Account, AccountKind, ClaudeProfileInput, CodexApiProfileInput, ImportResult, LiveAuthStatus, LiveClaudeStatus, ProfileEditData, SwitchResult};
+use crate::models::{Account, AccountKind, AccountUsageQuota, ClaudeProfileInput, CodexApiProfileInput, ImportResult, LiveAuthStatus, LiveClaudeStatus, ProfileEditData, SwitchResult};
 use std::fs;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
@@ -41,6 +41,36 @@ impl AccountsService {
 
     pub fn current_account(&self) -> Result<Option<Account>, String> {
         self.db.get_current_account().map_err(|error| error.to_string())
+    }
+
+    pub async fn get_account_usage_quota(&self, id: &str) -> Result<AccountUsageQuota, String> {
+        let row = self
+            .db
+            .get_account_by_id(id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "Account not found".to_string())?;
+
+        match row.app.as_str() {
+            APP_CODEX => {
+                if row.kind == AccountKind::ApiKey {
+                    Ok(usage::get_usage_quota_for_api_profile(
+                        id,
+                        &row.auth_json,
+                        row.base_url.as_deref(),
+                    )
+                    .await)
+                } else {
+                    Ok(usage::get_usage_quota_for_auth_json(id, &row.auth_json).await)
+                }
+            }
+            APP_CLAUDE => Ok(usage::get_balance_for_claude_profile(
+                id,
+                &row.auth_json,
+                row.base_url.as_deref(),
+            )
+            .await),
+            _ => Err("Usage is only available for Codex or Claude profiles".to_string()),
+        }
     }
 
     pub fn import_auth_file_from_path(&self, file_path: &str, name: Option<&str>, set_current: bool) -> ImportResult {
