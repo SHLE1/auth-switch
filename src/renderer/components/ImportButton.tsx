@@ -46,7 +46,7 @@ export function ImportButton({ onImported, onError, onPasteJson }: ImportButtonP
         <Button
           size="sm"
           disabled={busy}
-          className="h-7 gap-1 px-2.5 font-mono text-xs"
+          className="h-7 gap-1 px-2.5 font-mono text-[11px]"
         >
           <Plus size={12} />
           {busy ? t("importButton.importing") : t("importButton.addAuth")}

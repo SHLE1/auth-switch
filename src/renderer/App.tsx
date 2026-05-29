@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { AlertTriangle, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getErrorMessage } from "../shared/errors";
@@ -16,7 +16,6 @@ import { ImportButton } from "./components/ImportButton";
 import { PasteAuthJsonDialog } from "./components/PasteAuthJsonDialog";
 import { RenameDialog } from "./components/RenameDialog";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 export default function App(): JSX.Element {
@@ -41,21 +40,34 @@ export default function App(): JSX.Element {
   const [editClaudeProfile, setEditClaudeProfile] = useState<Account | null>(null);
   const [pasteAuthJsonVisible, setPasteAuthJsonVisible] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Account | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notices, setNotices] = useState<{ codex: string | null; claude: string | null }>({ codex: null, claude: null });
   const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const idx = activeTab === "codex" ? 0 : 1;
+    const el = tabRefs.current[idx];
+    if (el) {
+      const parent = el.parentElement;
+      if (parent) {
+        setPillStyle({ left: el.offsetLeft, width: el.offsetWidth });
+      }
+    }
+  }, [activeTab]);
 
   const showError = useCallback(
     (message: string | null) => {
-      setNotice(null);
+      setNotices({ codex: null, claude: null });
       setError(message);
     },
     [setError]
   );
 
   const showNotice = useCallback(
-    (message: string) => {
+    (message: string, app: "codex" | "claude") => {
       setError(null);
-      setNotice(message);
+      setNotices((prev) => ({ ...prev, [app]: message }));
     },
     [setError]
   );
@@ -78,7 +90,8 @@ export default function App(): JSX.Element {
       showNotice(
         result.alreadyCurrent
           ? t("notice.alreadyCurrent", { name: account.name })
-          : t("notice.switchedTo", { name: account.name })
+          : t("notice.switchedTo", { name: account.name }),
+        account.app
       );
       await refresh();
     } catch (error) {
@@ -93,7 +106,7 @@ export default function App(): JSX.Element {
     try {
       await authSwitch.renameAccount(renameTarget.id, name);
       setRenameTarget(null);
-      showNotice(t("notice.renamed", { name }));
+      showNotice(t("notice.renamed", { name }), renameTarget.app);
       await refresh();
     } catch (error) {
       showError(getErrorMessage(error));
@@ -103,7 +116,7 @@ export default function App(): JSX.Element {
   async function handleDelete(account: Account): Promise<void> {
     try {
       await authSwitch.deleteAccount(account.id);
-      showNotice(t("notice.deleted", { name: account.name }));
+      showNotice(t("notice.deleted", { name: account.name }), account.app);
       await refresh();
     } catch (error) {
       showError(getErrorMessage(error));
@@ -144,7 +157,7 @@ export default function App(): JSX.Element {
         return;
       }
       setApiProfileVisible(false);
-      showNotice(t("notice.savedApiProfile", { name: result.account?.name ?? input.name }));
+      showNotice(t("notice.savedApiProfile", { name: result.account?.name ?? input.name }), "codex");
       await refresh();
     } catch (error) {
       showError(getErrorMessage(error));
@@ -159,7 +172,7 @@ export default function App(): JSX.Element {
         return;
       }
       setClaudeProfileVisible(false);
-      showNotice(t("notice.savedClaudeProfile", { name: result.account?.name ?? input.name }));
+      showNotice(t("notice.savedClaudeProfile", { name: result.account?.name ?? input.name }), "claude");
       await refresh();
     } catch (error) {
       showError(getErrorMessage(error));
@@ -175,7 +188,7 @@ export default function App(): JSX.Element {
         return;
       }
       setEditApiProfile(null);
-      showNotice(t("notice.updatedApiProfile", { name: result.account?.name ?? input.name }));
+      showNotice(t("notice.updatedApiProfile", { name: result.account?.name ?? input.name }), "codex");
       await refresh();
     } catch (error) {
       showError(getErrorMessage(error));
@@ -191,7 +204,7 @@ export default function App(): JSX.Element {
         return;
       }
       setEditClaudeProfile(null);
-      showNotice(t("notice.updatedClaudeProfile", { name: result.account?.name ?? input.name }));
+      showNotice(t("notice.updatedClaudeProfile", { name: result.account?.name ?? input.name }), "claude");
       await refresh();
     } catch (error) {
       showError(getErrorMessage(error));
@@ -211,7 +224,8 @@ export default function App(): JSX.Element {
     showNotice(
       t("notice.imported", { name: result.account?.name ?? "auth.json" }) +
         duplicateNote +
-        sameEmailNote
+        sameEmailNote,
+      "codex"
     );
     void refresh();
   }
@@ -229,44 +243,71 @@ export default function App(): JSX.Element {
 
       <header
         style={dragRegionStyle}
-        className="flex shrink-0 items-center justify-between border-b bg-background px-4 py-2.5"
+        className="flex shrink-0 items-center border-b bg-background/80 backdrop-blur-md px-5 py-3 gap-4"
       >
-        <div>
-          <h1 className="text-sm font-semibold tracking-tight leading-tight">auth-switch</h1>
-          <p className="mono-label text-[10px] text-muted-foreground leading-tight">{t("app.localOnly")}</p>
+        {/* Left: title */}
+        <div className="shrink-0">
+          <h1 className="text-xl font-semibold text-blue-500 dark:text-blue-400">auth-switch</h1>
+          <p className="mono-label text-[10px] text-muted-foreground/60 leading-tight mt-0.5">{t("app.localOnly")}</p>
         </div>
 
-        <div style={noDragRegionStyle} className="flex items-center gap-1.5">
-          <div className="flex rounded-md border overflow-hidden">
-            <Button
+        {/* Center: tab switch */}
+        <div style={noDragRegionStyle} className="mx-auto flex rounded-lg border bg-muted/50 p-0.5 relative">
+          <div
+            className="absolute top-0.5 bottom-0.5 rounded-md bg-background shadow-sm transition-all duration-200 ease-out"
+            style={{ left: pillStyle.left, width: pillStyle.width }}
+          />
+          <button
+            type="button"
+            ref={(el) => { tabRefs.current[0] = el; }}
+            onClick={() => setActiveTab("codex")}
+            className={cn(
+              "relative z-10 rounded-md px-4 py-1 font-mono text-[11px] font-medium transition-colors duration-200",
+              activeTab === "codex" ? "text-foreground" : "text-muted-foreground hover:text-foreground/70"
+            )}
+          >
+            {t("tabs.codex")}
+          </button>
+          <button
+            type="button"
+            ref={(el) => { tabRefs.current[1] = el; }}
+            onClick={() => setActiveTab("claude")}
+            className={cn(
+              "relative z-10 rounded-md px-4 py-1 font-mono text-[11px] font-medium transition-colors duration-200",
+              activeTab === "claude" ? "text-foreground" : "text-muted-foreground hover:text-foreground/70"
+            )}
+          >
+            {t("tabs.claude")}
+          </button>
+        </div>
+
+        {/* Right: language + theme */}
+        <div style={noDragRegionStyle} className="flex shrink-0 items-center gap-1.5">
+          <div className="flex rounded-lg border bg-muted/40 p-0.5 overflow-hidden">
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
               onClick={() => setLanguage("en")}
               className={cn(
-                "h-7 rounded-none px-2.5 font-mono text-xs",
+                "rounded-md px-2.5 py-1 font-mono text-[11px] font-medium transition-colors duration-150",
                 currentLang === "en"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground/70"
               )}
             >
               EN
-            </Button>
-            <Separator orientation="vertical" className="h-7" />
-            <Button
+            </button>
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
               onClick={() => setLanguage("zh")}
               className={cn(
-                "h-7 rounded-none px-2.5 font-mono text-xs",
+                "rounded-md px-2.5 py-1 font-mono text-[11px] font-medium transition-colors duration-150",
                 currentLang === "zh"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground/70"
               )}
             >
               中文
-            </Button>
+            </button>
           </div>
 
           <Button
@@ -274,61 +315,31 @@ export default function App(): JSX.Element {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="size-7 text-muted-foreground"
+            className="size-8 rounded-lg text-muted-foreground hover:text-foreground"
           >
-            {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
           </Button>
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        <div style={noDragRegionStyle} className="mb-4 flex rounded-md border overflow-hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setActiveTab("codex")}
-            className={cn(
-              "h-8 flex-1 rounded-none font-mono text-xs",
-              activeTab === "codex" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-            )}
-          >
-            {t("tabs.codex")}
-          </Button>
-          <Separator orientation="vertical" className="h-8" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setActiveTab("claude")}
-            className={cn(
-              "h-8 flex-1 rounded-none font-mono text-xs",
-              activeTab === "claude" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-            )}
-          >
-            {t("tabs.claude")}
-          </Button>
-        </div>
-
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         <CurrentAccountCard account={activeCurrent} app={activeTab} />
 
-        {(error ?? notice) && (
+        {(error ?? notices[activeTab]) && (
           <div
             className={cn(
-              "mt-3 border-l-2 pl-3 py-1.5 text-xs leading-5",
-              error
-                ? "border-destructive text-destructive"
-                : "border-border text-muted-foreground"
+              "mt-4 rounded-lg border px-3.5 py-2.5 text-xs leading-5 shadow-sm",
+              error ? "border-destructive/40 bg-destructive/10 text-destructive" : "bg-card text-muted-foreground"
             )}
           >
             {error && <AlertTriangle size={12} className="inline mr-1.5 mb-0.5" />}
-            {error ?? notice}
+            {error ?? notices[activeTab]}
           </div>
         )}
 
-        <section className="mt-4">
-          <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="mono-label text-[10px] text-muted-foreground">{t("app.accounts")}</h2>
+        <section className="mt-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="mono-label text-[10px] text-muted-foreground/70 tracking-wide">{t("app.accounts")}</h2>
             <div style={noDragRegionStyle} className="flex items-center gap-1.5">
               {activeTab === "codex" ? (
                 <>
@@ -336,7 +347,7 @@ export default function App(): JSX.Element {
                     variant="ghost"
                     size="sm"
                     onClick={() => setApiProfileVisible(true)}
-                    className="h-7 px-2.5 font-mono text-xs text-muted-foreground"
+                    className="h-7 px-2.5 font-mono text-[11px] text-muted-foreground hover:text-foreground"
                   >
                     {t("app.addApi")}
                   </Button>
@@ -351,7 +362,7 @@ export default function App(): JSX.Element {
                   variant="ghost"
                   size="sm"
                   onClick={() => setClaudeProfileVisible(true)}
-                  className="h-7 px-2.5 font-mono text-xs text-muted-foreground"
+                  className="h-7 px-2.5 font-mono text-[11px] text-muted-foreground hover:text-foreground"
                 >
                   {t("app.addClaudeApi")}
                 </Button>
@@ -371,7 +382,7 @@ export default function App(): JSX.Element {
         </section>
       </div>
 
-      <footer className="shrink-0 border-t bg-background px-4 py-2 font-mono text-[10px] text-muted-foreground">
+      <footer className="shrink-0 border-t bg-background/80 backdrop-blur-sm px-5 py-2.5 font-mono text-[10px] text-muted-foreground/50 tracking-wide">
         {t("app.footer.local")} · {t("app.footer.db")}
       </footer>
 

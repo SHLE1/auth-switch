@@ -76,8 +76,8 @@ Click **Switch** next to any account/profile in the active tab. For Codex, the a
 ### Tray / menu bar
 The tray menu lets you switch Codex accounts and Claude Code profiles, open the main window, add a Codex auth file, and quit without opening the window. It uses the monochrome system tray/menu-bar icon and shows shortcuts for **Open Window** (`Command+,` on macOS, `Ctrl+W` on Windows) and **Quit** (`Command+Q` on macOS, `Ctrl+Q` on Windows). Closing the main window keeps auth-switch running in the tray/menu bar; use **Quit** to exit.
 
-### Rename / Delete
-Right-click or use the inline buttons on any account row.
+### Rename / Delete / Edit
+Use the **⋯** menu on any account row. The menu always shows **Rename** and **Delete**. For API-key profiles (Codex API or Claude Code), it also shows **Edit** to update the name, URL, key, or model mappings.
 
 ---
 

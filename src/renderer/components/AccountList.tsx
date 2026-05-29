@@ -28,15 +28,12 @@ export function AccountList({
 
   if (loading) {
     return (
-      <div className="rounded-md border divide-y">
+      <div className="space-y-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="flex items-center gap-3 px-3 py-2.5">
-            <span className="size-3.5 rounded-full bg-muted animate-pulse" />
-            <div className="flex-1 space-y-1.5">
-              <div className="h-3 w-32 rounded bg-muted animate-pulse" />
-              <div className="h-2.5 w-48 rounded bg-muted animate-pulse" />
-            </div>
-          </div>
+          <div
+            key={i}
+            className="w-full rounded-xl border border-dashed h-20 border-muted-foreground/30 bg-muted/30"
+          />
         ))}
       </div>
     );
@@ -44,15 +41,15 @@ export function AccountList({
 
   if (accounts.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-md border border-dashed py-8 text-center">
-        <FileKey size={20} className="text-muted-foreground/50" />
-        <p className="text-xs text-muted-foreground">{t(emptyKey)}</p>
+      <div className="flex flex-col items-center gap-2.5 rounded-xl border border-dashed bg-card py-10 text-center">
+        <FileKey size={18} className="text-muted-foreground/40" />
+        <p className="text-xs text-muted-foreground/70">{t(emptyKey)}</p>
       </div>
     );
   }
 
   return (
-    <ul className="rounded-md border divide-y">
+    <div className="space-y-3">
       {accounts.map((account) => (
         <AccountRow
           key={account.id}
@@ -64,6 +61,6 @@ export function AccountList({
           onDelete={onDelete}
         />
       ))}
-    </ul>
+    </div>
   );
 }
